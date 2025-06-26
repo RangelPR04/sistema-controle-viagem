@@ -794,8 +794,844 @@ const App = () => {
                     <tr style={{ backgroundColor: '#f9fafb' }}>
                       <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Data/Hora</th>
                       <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Motorista</th>
-                      <th style={{ padding: '8px 16px',
+                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Rota</th>
+                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Veículo</th>
+                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>KM</th>
+                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Status</th>
+                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {viagens.map(viagem => (
+                      <tr key={viagem.id} style={{ 
+                        borderBottom: '1px solid #f3f4f6',
+                        backgroundColor: viagem.temProblemas ? '#fef2f2' : 'white'
+                      }}>
+                        <td style={{ padding: '8px 16px' }}>{viagem.dataHora}</td>
+                        <td style={{ padding: '8px 16px' }}>{viagem.motorista}</td>
+                        <td style={{ padding: '8px 16px' }}>{viagem.origem} → {viagem.destino}</td>
+                        <td style={{ padding: '8px 16px' }}>{viagem.prefixo}</td>
+                        <td style={{ padding: '8px 16px' }}>{viagem.kmPercorridos} km</td>
+                        <td style={{ padding: '8px 16px' }}>
+                          {viagem.temProblemas ? (
+                            <div style={{ display: 'flex', alignItems: 'center', color: '#dc2626' }}>
+                              <AlertTriangle size={16} style={{ marginRight: '4px' }} />
+                              <span style={{ fontSize: '12px' }}>Com Ocorrências</span>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', color: '#059669' }}>
+                              <CheckCircle size={16} style={{ marginRight: '4px' }} />
+                              <span style={{ fontSize: '12px' }}>Normal</span>
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '8px 16px' }}>
+                          <button
+                            onClick={() => verDetalhesViagem(viagem)}
+                            style={{
+                              backgroundColor: '#2563eb',
+                              color: 'white',
+                              padding: '4px 8px',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Eye size={12} />
+                            Ver Detalhes
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
+  // SISTEMA DE CONTROLE DE VIAGEM (MOTORISTAS)
+  if (tela === 'controle-viagem') {
+    if (etapa === 'inicial') {
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(135deg, #bfdbfe 0%, #dbeafe 100%)',
+          padding: '16px'
+        }}>
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e3a8a' }}>
+              Sistema de Controle de Viagem
+            </h1>
+            <button
+              onClick={logout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: '#dc2626',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
+            >
+              <LogOut size={20} />
+              <span>Sair</span>
+            </button>
+          </header>
+          
+          <div style={{
+            maxWidth: '500px',
+            margin: '0 auto',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            padding: '32px'
+          }}>
+            
+            {/* Campo Motorista */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                Motorista
+              </label>
+              <input
+                type="text"
+                value={dadosViagem.motorista}
+                disabled
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#6b7280',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Origem e Destino */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ position: 'relative' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Origem
+                </label>
+                <input
+                  type="text"
+                  value={dadosViagem.origem}
+                  onChange={(e) => {
+                    handleInputChange('origem', e.target.value);
+                    buscarCidades(e.target.value, 'origem');
+                  }}
+                  onBlur={() => setTimeout(() => setMostrarSugestoesOrigem(false), 300)}
+                  onFocus={() => {
+                    if (dadosViagem.origem.length >= 2) {
+                      buscarCidades(dadosViagem.origem, 'origem');
+                    }
+                  }}
+                  placeholder="Digite ou selecione a origem"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                {mostrarSugestoesOrigem && sugestoesOrigem.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    zIndex: 10,
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    maxHeight: '160px',
+                    overflowY: 'auto',
+                    marginTop: '4px'
+                  }}>
+                    {sugestoesOrigem.map(cidade => (
+                      <button
+                        key={cidade.id}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          selecionarCidade(cidade, 'origem');
+                        }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '12px',
+                          border: 'none',
+                          borderBottom: '1px solid #f3f4f6',
+                          backgroundColor: 'white',
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                      >
+                        <span style={{ fontWeight: '500' }}>{cidade.nome}</span>
+                        <span style={{ color: '#6b7280', marginLeft: '8px' }}>- {cidade.uf}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div style={{ position: 'relative' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Destino
+                </label>
+                <input
+                  type="text"
+                  value={dadosViagem.destino}
+                  onChange={(e) => {
+                    handleInputChange('destino', e.target.value);
+                    buscarCidades(e.target.value, 'destino');
+                  }}
+                  onBlur={() => setTimeout(() => setMostrarSugestoesDestino(false), 300)}
+                  onFocus={() => {
+                    if (dadosViagem.destino.length >= 2) {
+                      buscarCidades(dadosViagem.destino, 'destino');
+                    }
+                  }}
+                  placeholder="Digite ou selecione o destino"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                {mostrarSugestoesDestino && sugestoesDestino.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    zIndex: 10,
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    maxHeight: '160px',
+                    overflowY: 'auto',
+                    marginTop: '4px'
+                  }}>
+                    {sugestoesDestino.map(cidade => (
+                      <button
+                        key={cidade.id}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          selecionarCidade(cidade, 'destino');
+                        }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '12px',
+                          border: 'none',
+                          borderBottom: '1px solid #f3f4f6',
+                          backgroundColor: 'white',
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                      >
+                        <span style={{ fontWeight: '500' }}>{cidade.nome}</span>
+                        <span style={{ color: '#6b7280', marginLeft: '8px' }}>- {cidade.uf}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Prefixo e KM Inicial */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Prefixo do Ônibus
+                </label>
+                <select
+                  value={dadosViagem.prefixo}
+                  onChange={(e) => handleInputChange('prefixo', e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <option value="">Selecione</option>
+                  {veiculos.filter(v => v.status === 'ativo').map(veiculo => (
+                    <option key={veiculo.id} value={veiculo.prefixo}>
+                      {veiculo.prefixo} - {veiculo.placa}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  KM Inicial
+                </label>
+                <input
+                  type="number"
+                  value={dadosViagem.kmInicial}
+                  onChange={(e) => handleInputChange('kmInicial', e.target.value)}
+                  placeholder="KM"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Checklist */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+                Checklist de Verificação
+              </h3>
+              <div>
+                {checklist.map((item, index) => (
+                  <div key={index} style={{ 
+                    backgroundColor: '#f9fafb', 
+                    borderRadius: '8px', 
+                    padding: '16px',
+                    marginBottom: '12px'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginBottom: item.status === 'nao-conforme' ? '12px' : 0
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: '500' }}>{item.item}</span>
+                        {item.obrigatorio ? (
+                          <span style={{
+                            backgroundColor: '#fef2f2',
+                            color: '#991b1b',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px'
+                          }}>
+                            Obrigatório
+                          </span>
+                        ) : (
+                          <span style={{
+                            backgroundColor: '#eff6ff',
+                            color: '#1d4ed8',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px'
+                          }}>
+                            Opcional
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                          onClick={() => handleChecklistChange(index, 'status', 'conforme')}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            border: 'none',
+                            cursor: 'pointer',
+                            backgroundColor: item.status === 'conforme' ? '#059669' : '#e5e7eb',
+                            color: item.status === 'conforme' ? 'white' : '#374151'
+                          }}
+                        >
+                          Conforme
+                        </button>
+                        <button
+                          onClick={() => handleChecklistChange(index, 'status', 'nao-conforme')}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            border: 'none',
+                            cursor: 'pointer',
+                            backgroundColor: item.status === 'nao-conforme' ? '#dc2626' : '#e5e7eb',
+                            color: item.status === 'nao-conforme' ? 'white' : '#374151'
+                          }}
+                        >
+                          Não Conforme
+                        </button>
+                        <button
+                          onClick={() => handleChecklistChange(index, 'foto', !item.foto)}
+                          style={{
+                            padding: '8px',
+                            borderRadius: '4px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            backgroundColor: item.foto ? '#2563eb' : '#d1d5db',
+                            color: item.foto ? 'white' : '#6b7280'
+                          }}
+                          title="Tirar foto"
+                        >
+                          <Camera size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    {item.status === 'nao-conforme' && (
+                      <textarea
+                        placeholder="Descreva o problema encontrado..."
+                        value={item.observacao}
+                        onChange={(e) => handleChecklistChange(index, 'observacao', e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          fontSize: '14px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '4px',
+                          resize: 'none',
+                          rows: 2,
+                          boxSizing: 'border-box'
+                        }}
+                        rows="2"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Botão Iniciar Viagem */}
+            <button
+              onClick={iniciarViagem}
+              disabled={!podeIniciarViagem()}
+              style={{
+                width: '100%',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: 'white',
+                border: 'none',
+                cursor: podeIniciarViagem() ? 'pointer' : 'not-allowed',
+                backgroundColor: podeIniciarViagem() ? '#16a34a' : '#9ca3af',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <Play size={24} />
+              <span>Iniciar Viagem</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (etapa === 'viagem') {
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(135deg, #bbf7d0 0%, #dcfce7 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            maxWidth: '500px',
+            margin: '0 auto',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            padding: '40px',
+            textAlign: 'center'
+          }}>
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                backgroundColor: '#16a34a',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px auto'
+              }}>
+                <Play style={{ color: 'white' }} size={40} />
+              </div>
+              <h2 style={{ 
+                fontSize: '32px', 
+                fontWeight: 'bold', 
+                color: '#16a34a',
+                margin: '0 0 8px 0'
+              }}>
+                Boa Viagem!
+              </h2>
+              <p style={{ color: '#6b7280', marginBottom: '4px' }}>
+                Viagem de {dadosViagem.origem} para {dadosViagem.destino}
+              </p>
+              <p style={{ fontSize: '14px', color: '#9ca3af' }}>
+                Ônibus: {dadosViagem.prefixo} | Motorista: {dadosViagem.motorista}
+              </p>
+            </div>
+
+            <button
+              onClick={finalizarViagem}
+              style={{
+                width: '100%',
+                backgroundColor: '#dc2626',
+                color: 'white',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <Square size={24} />
+              <span>Finalizar Viagem</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (etapa === 'finalizacao') {
+      const kmInicial = parseFloat(dadosViagem.kmInicial);
+      const kmFinal = parseFloat(dadosViagem.kmFinal);
+      const kmInvalido = dadosViagem.kmFinal && kmFinal <= kmInicial;
+      
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(135deg, #fed7aa 0%, #fef3c7 100%)',
+          padding: '16px'
+        }}>
+          <div style={{
+            maxWidth: '500px',
+            margin: '0 auto',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            padding: '32px'
+          }}>
+            <h2 style={{ 
+              fontSize: '24px', 
+              fontWeight: 'bold', 
+              color: '#ea580c',
+              marginBottom: '24px',
+              textAlign: 'center'
+            }}>
+              Finalização da Viagem
+            </h2>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                KM Final
+              </label>
+              <input
+                type="number"
+                value={dadosViagem.kmFinal}
+                onChange={(e) => handleInputChange('kmFinal', e.target.value)}
+                placeholder="Quilometragem final"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: kmInvalido ? '1px solid #dc2626' : '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  backgroundColor: kmInvalido ? '#fef2f2' : 'white',
+                  boxSizing: 'border-box'
+                }}
+              />
+              {kmInvalido && (
+                <div style={{
+                  marginTop: '8px',
+                  padding: '8px',
+                  backgroundColor: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '4px',
+                  color: '#b91c1c',
+                  fontSize: '14px'
+                }}>
+                  <strong⚠️ Erro:</strong> KM final ({kmFinal}) deve ser maior que KM inicial ({kmInicial})
+                </div>
+              )}
+              <div style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
+                KM inicial da viagem: {dadosViagem.kmInicial}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                color: '#374151',
+                marginBottom: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <FileText size={16} />
+                Relatar Diversidades da Viagem
+              </label>
+              <textarea
+                value={dadosViagem.diversidades}
+                onChange={(e) => handleInputChange('diversidades', e.target.value)}
+                placeholder="Descreva qualquer ocorrência durante a viagem..."
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  height: '80px',
+                  resize: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                color: '#374151',
+                marginBottom: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <Wrench size={16} />
+                Ordem de Serviço
+              </label>
+              <textarea
+                value={dadosViagem.ordemServico}
+                onChange={(e) => handleInputChange('ordemServico', e.target.value)}
+                placeholder="Serviços necessários no veículo..."
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  height: '80px',
+                  resize: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ 
+              backgroundColor: '#f9fafb', 
+              padding: '16px', 
+              borderRadius: '8px',
+              marginBottom: '24px'
+            }}>
+              <h4 style={{ fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Resumo da Viagem:</h4>
+              <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                <p style={{ margin: '4px 0' }}><strong>Motorista:</strong> {dadosViagem.motorista}</p>
+                <p style={{ margin: '4px 0' }}><strong>Rota:</strong> {dadosViagem.origem} → {dadosViagem.destino}</p>
+                <p style={{ margin: '4px 0' }}><strong>Ônibus:</strong> {dadosViagem.prefixo}</p>
+                <p style={{ margin: '4px 0' }}><strong>KM Inicial:</strong> {dadosViagem.kmInicial}</p>
+                {dadosViagem.kmFinal && (
+                  <p style={{ margin: '4px 0' }}><strong>KM Percorridos:</strong> {dadosViagem.kmFinal - dadosViagem.kmInicial} km</p>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={concluirViagem}
+              disabled={kmInvalido || !dadosViagem.kmFinal}
+              style={{
+                width: '100%',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: 'white',
+                border: 'none',
+                cursor: (kmInvalido || !dadosViagem.kmFinal) ? 'not-allowed' : 'pointer',
+                backgroundColor: (kmInvalido || !dadosViagem.kmFinal) ? '#9ca3af' : '#2563eb'
+              }}
+            >
+              {kmInvalido ? 'Corrija o KM Final' : 'Concluir Viagem'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (etapa === 'concluida') {
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(135deg, #bfdbfe 0%, #dbeafe 100%)',
+          padding: '16px'
+        }}>
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e3a8a' }}>
+              Sistema de Controle de Viagem
+            </h1>
+            <button
+              onClick={logout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: '#dc2626',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
+            >
+              <LogOut size={20} />
+              <span>Sair</span>
+            </button>
+          </header>
+          
+          <div style={{
+            maxWidth: '500px',
+            margin: '0 auto',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            padding: '40px',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              backgroundColor: '#2563eb',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px auto'
+            }}>
+              <CheckCircle style={{ color: 'white' }} size={40} />
+            </div>
+            <h2 style={{ 
+              fontSize: '24px', 
+              fontWeight: 'bold', 
+              color: '#2563eb',
+              marginBottom: '16px'
+            }}>
+              Viagem Concluída!
+            </h2>
+            <p style={{ color: '#6b7280', marginBottom: '24px' }}>
+              Todos os dados foram salvos com sucesso.
+            </p>
+            
+            <div style={{ 
+              backgroundColor: '#f9fafb', 
+              padding: '16px', 
+              borderRadius: '8px',
+              marginBottom: '24px',
+              textAlign: 'left'
+            }}>
+              <h4 style={{ fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Relatório Final:</h4>
+              <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                <p style={{ margin: '4px 0' }}><strong>Motorista:</strong> {dadosViagem.motorista}</p>
+                <p style={{ margin: '4px 0' }}><strong>Rota:</strong> {dadosViagem.origem} → {dadosViagem.destino}</p>
+                <p style={{ margin: '4px 0' }}><strong>Ônibus:</strong> {dadosViagem.prefixo}</p>
+                <p style={{ margin: '4px 0' }}><strong>KM Percorridos:</strong> {dadosViagem.kmFinal - dadosViagem.kmInicial} km</p>
+                {dadosViagem.diversidades && (
+                  <p style={{ margin: '4px 0' }}><strong>Diversidades:</strong> {dadosViagem.diversidades}</p>
+                )}
+                {dadosViagem.ordemServico && (
+                  <p style={{ margin: '4px 0' }}><strong>Ordem de Serviço:</strong> {dadosViagem.ordemServico}</p>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={novaViagem}
+              style={{
+                width: '100%',
+                backgroundColor: '#16a34a',
+                color: 'white',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              Nova Viagem
+            </button>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // Adicione outras telas conforme necessário...
   return null;
 };
 
