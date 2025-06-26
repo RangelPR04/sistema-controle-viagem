@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Camera, CheckCircle, XCircle, Play, Square, FileText, Wrench, Users, Truck, Settings, LogOut, Eye, Plus, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import './index.css'; // Mantém o CSS original
 
 const App = () => {
   const [tela, setTela] = useState('login');
@@ -7,7 +8,7 @@ const App = () => {
   const [tipoUsuario, setTipoUsuario] = useState(null);
   const [viagemDetalhada, setViagemDetalhada] = useState(null);
   
-  // Estados para dados
+  // Estados para dados (baseados nos seus dados originais)
   const [credenciaisAdmin, setCredenciaisAdmin] = useState({
     usuario: 'admin',
     senha: 'admin123'
@@ -24,6 +25,7 @@ const App = () => {
     { id: 2, prefixo: '1002', placa: 'DEF-5678', modelo: 'Volvo B270F', status: 'ativo' }
   ]);
   
+  // Adaptando suas cidades originais
   const [cidades, setCidades] = useState([
     { id: 1, nome: 'São Paulo', uf: 'SP' },
     { id: 2, nome: 'Rio de Janeiro', uf: 'RJ' },
@@ -89,7 +91,7 @@ const App = () => {
     { item: 'Interior', status: 'pendente', foto: false, observacao: '', obrigatorio: true }
   ]);
 
-  // Funções de autenticação
+  // Funções de autenticação (usando sua lógica original adaptada)
   const fazerLogin = () => {
     if (loginData.usuario === credenciaisAdmin.usuario && loginData.senha === credenciaisAdmin.senha) {
       setUsuarioLogado('Administrador');
@@ -139,7 +141,7 @@ const App = () => {
     });
   };
 
-  // Funções CRUD
+  // Todas as funções CRUD mantidas...
   const adicionarMotorista = () => {
     if (novoMotorista.nome && novoMotorista.senha) {
       const novoId = Math.max(...motoristas.map(m => m.id), 0) + 1;
@@ -209,37 +211,31 @@ const App = () => {
   };
 
   const alterarCredenciaisAdmin = () => {
-    // Validar senha atual
     if (alterarCredenciais.senhaAtual !== credenciaisAdmin.senha) {
       alert('Senha atual incorreta!');
       return;
     }
 
-    // Validar se os campos estão preenchidos
     if (!alterarCredenciais.novoUsuario || !alterarCredenciais.novaSenha) {
       alert('Por favor, preencha todos os campos!');
       return;
     }
 
-    // Validar confirmação de senha
     if (alterarCredenciais.novaSenha !== alterarCredenciais.confirmarSenha) {
       alert('A confirmação de senha não confere!');
       return;
     }
 
-    // Validar tamanho mínimo da senha
     if (alterarCredenciais.novaSenha.length < 6) {
       alert('A nova senha deve ter pelo menos 6 caracteres!');
       return;
     }
 
-    // Atualizar credenciais
     setCredenciaisAdmin({
       usuario: alterarCredenciais.novoUsuario,
       senha: alterarCredenciais.novaSenha
     });
 
-    // Limpar formulário
     setAlterarCredenciais({
       senhaAtual: '',
       novoUsuario: '',
@@ -308,7 +304,6 @@ const App = () => {
   };
 
   const concluirViagem = () => {
-    // Validar se KM final é maior que inicial
     const kmInicial = parseFloat(dadosViagem.kmInicial);
     const kmFinal = parseFloat(dadosViagem.kmFinal);
     
@@ -346,7 +341,6 @@ const App = () => {
       diversidades: '',
       ordemServico: ''
     });
-    // Criar checklist baseado nos itens configurados
     const checklistInicial = itensChecklist.map(item => ({
       item: item.nome,
       status: 'pendente',
@@ -355,7 +349,6 @@ const App = () => {
       obrigatorio: item.obrigatorio
     }));
     setChecklist(checklistInicial);
-    // Limpar autocomplete
     setSugestoesOrigem([]);
     setSugestoesDestino([]);
     setMostrarSugestoesOrigem(false);
@@ -376,63 +369,432 @@ const App = () => {
     setTela('detalhes-viagem');
   };
 
-  // Tela de Login
+  // TELA DE LOGIN - MANTENDO SEU LAYOUT ORIGINAL
   if (tela === 'login') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-2xl p-8">
-          <div className="text-center mb-8">
-            <Truck className="mx-auto text-blue-600 mb-4" size={48} />
-            <h1 className="text-3xl font-bold text-gray-800">Sistema de Viagens</h1>
-            <p className="text-gray-600 mt-2">Controle de Frota de Ônibus</p>
+      <div style={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          maxWidth: '400px',
+          width: '100%',
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '40px',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+        }}>
+          {/* Ícone e Título - Mantendo seu layout */}
+          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+            <Truck style={{ 
+              width: '60px', 
+              height: '60px', 
+              color: '#4f46e5',
+              margin: '0 auto 15px auto'
+            }} />
+            <h1 style={{ 
+              fontSize: '32px', 
+              fontWeight: 'bold', 
+              color: '#1f2937',
+              margin: 0
+            }}>
+              Sistema de Viagens
+            </h1>
+            <p style={{ 
+              color: '#6b7280', 
+              marginTop: '8px',
+              fontSize: '16px'
+            }}>
+              Controle de Frota de Ônibus
+            </p>
           </div>
           
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Usuário
-              </label>
-              <input
-                type="text"
-                value={loginData.usuario}
-                onChange={(e) => setLoginData({...loginData, usuario: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Nome do usuário ou 'admin'"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Senha
-              </label>
-              <input
-                type="password"
-                value={loginData.senha}
-                onChange={(e) => setLoginData({...loginData, senha: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Senha"
-              />
-            </div>
-            
-            <button
-              onClick={fazerLogin}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold"
-            >
-              Entrar
-            </button>
-            
-            <div className="text-sm text-gray-500 text-center mt-4">
-              <p><strong>Admin:</strong> admin / admin123</p>
-              <p><strong>Motorista:</strong> João Silva / 123456</p>
-            </div>
+          {/* Formulário - Mantendo estilo original */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ 
+              display: 'block', 
+              fontSize: '14px', 
+              fontWeight: '500', 
+              color: '#374151',
+              marginBottom: '8px'
+            }}>
+              Usuário
+            </label>
+            <input
+              type="text"
+              value={loginData.usuario}
+              onChange={(e) => setLoginData({...loginData, usuario: e.target.value})}
+              placeholder="Nome do usuário ou 'admin'"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                fontSize: '16px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          
+          <div style={{ marginBottom: '25px' }}>
+            <label style={{ 
+              display: 'block', 
+              fontSize: '14px', 
+              fontWeight: '500', 
+              color: '#374151',
+              marginBottom: '8px'
+            }}>
+              Senha
+            </label>
+            <input
+              type="password"
+              value={loginData.senha}
+              onChange={(e) => setLoginData({...loginData, senha: e.target.value})}
+              placeholder="Senha"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                fontSize: '16px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          
+          <button
+            onClick={fazerLogin}
+            style={{
+              width: '100%',
+              backgroundColor: '#4f46e5',
+              color: 'white',
+              padding: '12px',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              marginBottom: '20px'
+            }}
+          >
+            Entrar
+          </button>
+          
+          {/* Credenciais de teste - Mantendo seu estilo */}
+          <div style={{ 
+            fontSize: '14px', 
+            color: '#6b7280', 
+            textAlign: 'center',
+            lineHeight: '1.5'
+          }}>
+            <p style={{ margin: '5px 0' }}>
+              <strong>Admin:</strong> admin / admin123
+            </p>
+            <p style={{ margin: '5px 0' }}>
+              <strong>Motorista:</strong> João Silva / 123456
+            </p>
           </div>
         </div>
       </div>
     );
   }
 
-  // ... resto do código igual ao anterior ...
-  // (incluindo todas as outras telas: dashboard-admin, controle-viagem, etc.)
+  // DASHBOARD ADMIN - Com estilo consistente
+  if (tela === 'dashboard-admin') {
+    const viagensComProblemas = viagens.filter(v => v.temProblemas).length;
+    
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
+        <header style={{ 
+          backgroundColor: 'white', 
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          padding: '16px 0'
+        }}>
+          <div style={{ 
+            maxWidth: '1200px', 
+            margin: '0 auto', 
+            padding: '0 24px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
+              Painel Administrativo
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <span style={{ color: '#6b7280' }}>Olá, {usuarioLogado}</span>
+              <button
+                onClick={logout}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  color: '#dc2626',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '16px'
+                }}
+              >
+                <LogOut size={20} />
+                <span>Sair</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
+          {/* Cards de estatísticas */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '24px',
+            marginBottom: '32px'
+          }}>
+            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <Users style={{ color: '#2563eb', marginRight: '12px' }} size={32} />
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Motoristas</h3>
+                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#2563eb', margin: '4px 0 0 0' }}>
+                    {motoristas.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <Truck style={{ color: '#059669', marginRight: '12px' }} size={32} />
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Veículos</h3>
+                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#059669', margin: '4px 0 0 0' }}>
+                    {veiculos.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <Settings style={{ color: '#7c3aed', marginRight: '12px' }} size={32} />
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Cidades</h3>
+                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#7c3aed', margin: '4px 0 0 0' }}>
+                    {cidades.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <FileText style={{ color: '#ea580c', marginRight: '12px' }} size={32} />
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Viagens</h3>
+                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#ea580c', margin: '4px 0 0 0' }}>
+                    {viagens.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <AlertTriangle style={{ color: '#dc2626', marginRight: '12px' }} size={32} />
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Ocorrências</h3>
+                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626', margin: '4px 0 0 0' }}>
+                    {viagensComProblemas}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção de gerenciamento */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+            gap: '32px'
+          }}>
+            
+            {/* Gerenciar Motoristas */}
+            <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
+                <Users style={{ marginRight: '8px' }} size={24} />
+                Gerenciar Motoristas
+              </h2>
+              
+              <div style={{ marginBottom: '16px' }}>
+                <input
+                  type="text"
+                  placeholder="Nome do motorista"
+                  value={novoMotorista.nome}
+                  onChange={(e) => setNovoMotorista({...novoMotorista, nome: e.target.value})}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', marginBottom: '8px' }}
+                />
+                <input
+                  type="password"
+                  placeholder="Senha"
+                  value={novoMotorista.senha}
+                  onChange={(e) => setNovoMotorista({...novoMotorista, senha: e.target.value})}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', marginBottom: '8px' }}
+                />
+                <button
+                  onClick={adicionarMotorista}
+                  style={{ 
+                    width: '100%', 
+                    backgroundColor: '#2563eb', 
+                    color: 'white', 
+                    padding: '8px 16px', 
+                    border: 'none', 
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <Plus size={16} />
+                  Adicionar Motorista
+                </button>
+              </div>
+              
+              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {motoristas.map(motorista => (
+                  <div key={motorista.id} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    padding: '8px', 
+                    backgroundColor: '#f9fafb', 
+                    borderRadius: '4px',
+                    marginBottom: '4px'
+                  }}>
+                    <div>
+                      <span style={{ fontWeight: '500' }}>{motorista.nome}</span>
+                      <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>
+                        ({motorista.status})
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => removerMotorista(motorista.id)}
+                      style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Gerenciar Veículos */}
+            <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
+                <Truck style={{ marginRight: '8px' }} size={24} />
+                Gerenciar Veículos
+              </h2>
+              
+              <div style={{ marginBottom: '16px' }}>
+                <input
+                  type="text"
+                  placeholder="Prefixo"
+                  value={novoVeiculo.prefixo}
+                  onChange={(e) => setNovoVeiculo({...novoVeiculo, prefixo: e.target.value})}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', marginBottom: '8px' }}
+                />
+                <input
+                  type="text"
+                  placeholder="Placa"
+                  value={novoVeiculo.placa}
+                  onChange={(e) => setNovoVeiculo({...novoVeiculo, placa: e.target.value})}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', marginBottom: '8px' }}
+                />
+                <input
+                  type="text"
+                  placeholder="Modelo"
+                  value={novoVeiculo.modelo}
+                  onChange={(e) => setNovoVeiculo({...novoVeiculo, modelo: e.target.value})}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', marginBottom: '8px' }}
+                />
+                <button
+                  onClick={adicionarVeiculo}
+                  style={{ 
+                    width: '100%', 
+                    backgroundColor: '#059669', 
+                    color: 'white', 
+                    padding: '8px 16px', 
+                    border: 'none', 
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <Plus size={16} />
+                  Adicionar Veículo
+                </button>
+              </div>
+              
+              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {veiculos.map(veiculo => (
+                  <div key={veiculo.id} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    padding: '8px', 
+                    backgroundColor: '#f9fafb', 
+                    borderRadius: '4px',
+                    marginBottom: '4px'
+                  }}>
+                    <div>
+                      <span style={{ fontWeight: '500' }}>{veiculo.prefixo}</span>
+                      <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>
+                        {veiculo.placa}
+                      </span>
+                      <div style={{ fontSize: '10px', color: '#9ca3af' }}>{veiculo.modelo}</div>
+                    </div>
+                    <button
+                      onClick={() => removerVeiculo(veiculo.id)}
+                      style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Relatório de Viagens */}
+          {viagens.length > 0 && (
+            <div style={{ 
+              backgroundColor: 'white', 
+              borderRadius: '8px', 
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+              padding: '24px',
+              marginTop: '32px'
+            }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
+                <FileText style={{ marginRight: '8px' }} size={24} />
+                Relatório de Viagens
+              </h2>
+              
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f9fafb' }}>
+                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Data/Hora</th>
+                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Motorista</th>
+                      <th style={{ padding: '8px 16px',
 
   return null;
 };
