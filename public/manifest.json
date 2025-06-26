@@ -1,0 +1,23 @@
+{
+  "short_name": "Sistema Viagem",
+  "name": "Sistema de Controle de Viagem",
+  "description": "Sistema para controle de frota de ônibus com checklist e relatórios",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI1NjNlYiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxMSIgeD0iMyIgeT0iMTEiIHJ4PSIyIiByeT0iMiIvPjxjaXJjbGUgY3g9IjciIGN5PSIxNiIgcj0iMSIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iMTYiIHI9IjEiLz48cGF0aCBkPSJtMyAxMSA5LTgiLz48cGF0aCBkPSJNNyAzIDUgM3YxOGwyIDJoMTNsNi00Vi0yeiIvPjwvc3ZnPg==",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI1NjNlYiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxMSIgeD0iMyIgeT0iMTEiIHJ4PSIyIiByeT0iMiIvPjxjaXJjbGUgY3g9IjciIGN5PSIxNiIgcj0iMSIvPjxjaXJjbGUgY3g9IjE3IiBjeT0iMTYiIHI9IjEiLz48cGF0aCBkPSJtMyAxMSA5LTgiLz48cGF0aCBkPSJtNyAzIDUgM3YxOGwyIDJoMTNsNi00VjEyeiIvPjwvc3ZnPg==",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity", "utilities"]
+}
