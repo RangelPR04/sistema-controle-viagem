@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, CheckCircle, XCircle, Play, Square, FileText, Wrench, Users, Truck, Settings, LogOut, Eye, Plus, Edit2, Trash2, AlertTriangle, ArrowLeft, MapPin, Clock, User } from 'lucide-react';
 
 const App = () => {
@@ -6,7 +6,7 @@ const App = () => {
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [tipoUsuario, setTipoUsuario] = useState(null);
   const [viagemDetalhada, setViagemDetalhada] = useState(null);
-  const [modalAtivo, setModalAtivo] = useState(null); // Para os cartões clicáveis
+  const [modalAtivo, setModalAtivo] = useState(null);
   
   // Estados para dados
   const [credenciaisAdmin, setCredenciaisAdmin] = useState({
@@ -14,7 +14,6 @@ const App = () => {
     senha: 'admin123'
   });
   
-  // Usuários do sistema com diferentes perfis
   const [usuarios, setUsuarios] = useState([
     { id: 1, nome: 'João Silva', senha: '123456', tipo: 'motorista', status: 'ativo' },
     { id: 2, nome: 'Maria Santos', senha: '123456', tipo: 'motorista', status: 'ativo' },
@@ -24,9 +23,46 @@ const App = () => {
   ]);
   
   const [veiculos, setVeiculos] = useState([
-    { id: 1, prefixo: '1001', placa: 'ABC-1234', modelo: 'Mercedes-Benz O-500', status: 'ativo' },
-    { id: 2, prefixo: '1002', placa: 'DEF-5678', modelo: 'Volvo B270F', status: 'ativo' },
-    { id: 3, prefixo: '1003', placa: 'GHI-9012', modelo: 'Scania K270', status: 'manutencao' }
+    { 
+      id: 1, 
+      prefixo: '1001', 
+      placa: 'ABC-1234', 
+      modelo: 'Mercedes-Benz O-500', 
+      status: 'manutencao',
+      kmAtual: 50450,
+      proximaRevisao: 55000,
+      tipoRevisao: 'Revisão 10.000km',
+      historicoKm: [
+        { data: '2025-01-15', km: 50450, motorista: 'João Silva', tipo: 'viagem' },
+        { data: '2025-01-10', km: 50000, motorista: 'Maria Santos', tipo: 'viagem' }
+      ]
+    },
+    { 
+      id: 2, 
+      prefixo: '1002', 
+      placa: 'DEF-5678', 
+      modelo: 'Volvo B270F', 
+      status: 'ativo',
+      kmAtual: 42300,
+      proximaRevisao: 45000,
+      tipoRevisao: 'Revisão 5.000km',
+      historicoKm: [
+        { data: '2025-01-14', km: 42300, motorista: 'Pedro Oliveira', tipo: 'viagem' }
+      ]
+    },
+    { 
+      id: 3, 
+      prefixo: '1003', 
+      placa: 'GHI-9012', 
+      modelo: 'Scania K270', 
+      status: 'manutencao',
+      kmAtual: 75680,
+      proximaRevisao: 80000,
+      tipoRevisao: 'Revisão 20.000km',
+      historicoKm: [
+        { data: '2025-01-14', km: 75680, motorista: 'Maria Santos', tipo: 'viagem' }
+      ]
+    }
   ]);
   
   const [cidades, setCidades] = useState([
@@ -56,48 +92,55 @@ const App = () => {
       motorista: 'João Silva',
       origem: 'São Paulo - SP',
       destino: 'Rio de Janeiro - RJ',
-      prefixo: '1003',
+      prefixo: '1001',
       kmInicial: '50000',
       kmFinal: '50450',
       kmPercorridos: 450,
       diversidades: 'Trânsito intenso na Dutra',
-      ordemServico: 'Verificar freios',
+      ordemServico: 'Verificar freios - relatado pelo motorista\n\nCHECKLIST - Itens não conformes: Freios (Ruído nos freios traseiros); Luzes (Farol baixo direito queimado)',
       dataHora: '2025-01-15 08:30',
       temProblemas: true,
-      statusManutencao: undefined,
+      precisaManutencao: true,
+      statusManutencao: 'pendente',
       checklist: [
         { item: 'Pneus', status: 'conforme', foto: true, observacao: '', obrigatorio: true },
         { item: 'Freios', status: 'nao-conforme', foto: true, observacao: 'Ruído nos freios traseiros', obrigatorio: true },
-        { item: 'Luzes', status: 'conforme', foto: false, observacao: '', obrigatorio: true }
-      ],
-      itensNaoConformes: [
-        {
-          id: 'item_001',
-          item: 'Freios',
-          status: 'nao-conforme',
-          observacao: 'Ruído nos freios traseiros',
-          obrigatorio: true,
-          resolvido: false
-        }
+        { item: 'Luzes', status: 'nao-conforme', foto: false, observacao: 'Farol baixo direito queimado', obrigatorio: true },
+        { item: 'Portas', status: 'conforme', foto: false, observacao: '', obrigatorio: true },
+        { item: 'Interior', status: 'conforme', foto: false, observacao: '', obrigatorio: true }
       ]
     }
   ]);
   
-  // Estados do formulário de login
   const [loginData, setLoginData] = useState({ usuario: '', senha: '' });
-  
-  // Estados para formulários
   const [novoUsuario, setNovoUsuario] = useState({ nome: '', senha: '', tipo: 'motorista' });
-  const [novoVeiculo, setNovoVeiculo] = useState({ prefixo: '', placa: '', modelo: '' });
+  const [novoVeiculo, setNovoVeiculo] = useState({ 
+    prefixo: '', 
+    placa: '', 
+    modelo: '', 
+    kmAtual: '', 
+    proximaRevisao: '', 
+    tipoRevisao: 'Revisão 5.000km' 
+  });
   const [novaCidade, setNovaCidade] = useState({ nome: '', uf: '' });
   
-  // Estados para autocomplete
+  const [revisoesAgendadas, setRevisoesAgendadas] = useState([
+    {
+      id: 1,
+      prefixo: '1001',
+      tipoRevisao: 'Revisão 10.000km',
+      kmProgramado: 55000,
+      kmAtual: 50450,
+      status: 'agendada',
+      dataAgendamento: '2025-01-15'
+    }
+  ]);
+  
   const [sugestoesOrigem, setSugestoesOrigem] = useState([]);
   const [sugestoesDestino, setSugestoesDestino] = useState([]);
   const [mostrarSugestoesOrigem, setMostrarSugestoesOrigem] = useState(false);
   const [mostrarSugestoesDestino, setMostrarSugestoesDestino] = useState(false);
   
-  // Estados da viagem
   const [etapa, setEtapa] = useState('inicial');
   const [dadosViagem, setDadosViagem] = useState({
     motorista: '',
@@ -118,9 +161,125 @@ const App = () => {
     { item: 'Interior', status: 'pendente', foto: false, observacao: '', obrigatorio: true }
   ]);
 
-  // Função de login melhorada
+  // PWA Service Worker e Manifest
+  useEffect(() => {
+    // Registrar Service Worker
+    if ('serviceWorker' in navigator) {
+      const swContent = `
+        const CACHE_NAME = 'bus-control-v1';
+        const urlsToCache = [
+          '/',
+          '/static/js/bundle.js',
+          '/static/css/main.css'
+        ];
+
+        self.addEventListener('install', function(event) {
+          event.waitUntil(
+            caches.open(CACHE_NAME)
+              .then(function(cache) {
+                return cache.addAll(urlsToCache);
+              })
+          );
+        });
+
+        self.addEventListener('fetch', function(event) {
+          event.respondWith(
+            caches.match(event.request)
+              .then(function(response) {
+                if (response) {
+                  return response;
+                }
+                return fetch(event.request);
+              }
+            )
+          );
+        });
+      `;
+      
+      const blob = new Blob([swContent], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      
+      navigator.serviceWorker.register(swUrl)
+        .then(reg => console.log('SW registrado'))
+        .catch(err => console.log('SW erro', err));
+    }
+
+    // Criar manifest.json dinamicamente
+    const manifest = {
+      name: "Sistema de Controle de Viagens",
+      short_name: "ControleViagens",
+      description: "Sistema de controle de frota de ônibus",
+      start_url: "/",
+      display: "standalone",
+      background_color: "#4f46e5",
+      theme_color: "#4f46e5",
+      orientation: "portrait",
+      icons: [
+        {
+          src: "data:image/svg+xml;base64," + btoa(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+              <rect width="200" height="200" fill="#4f46e5"/>
+              <path d="M50 80h100c10 0 20 10 20 20v40c0 10-10 20-20 20h-100c-10 0-20-10-20-20v-40c0-10 10-20 20-20z" fill="white"/>
+              <circle cx="70" cy="140" r="15" fill="#4f46e5"/>
+              <circle cx="130" cy="140" r="15" fill="#4f46e5"/>
+              <rect x="60" y="90" width="80" height="30" fill="#4f46e5"/>
+            </svg>
+          `),
+          sizes: "192x192",
+          type: "image/svg+xml"
+        },
+        {
+          src: "data:image/svg+xml;base64," + btoa(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+              <rect width="512" height="512" fill="#4f46e5"/>
+              <path d="M128 205h256c26 0 46 20 46 46v102c0 26-20 46-46 46h-256c-26 0-46-20-46-46v-102c0-26 20-46 46-46z" fill="white"/>
+              <circle cx="179" cy="358" r="38" fill="#4f46e5"/>
+              <circle cx="333" cy="358" r="38" fill="#4f46e5"/>
+              <rect x="154" y="230" width="204" height="77" fill="#4f46e5"/>
+            </svg>
+          `),
+          sizes: "512x512",
+          type: "image/svg+xml"
+        }
+      ]
+    };
+
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    
+    // Adicionar link do manifest ao head
+    let manifestLink = document.querySelector('link[rel="manifest"]');
+    if (!manifestLink) {
+      manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      document.head.appendChild(manifestLink);
+    }
+    manifestLink.href = manifestUrl;
+
+    // Adicionar meta tags para PWA
+    const metaTags = [
+      { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' },
+      { name: 'theme-color', content: '#4f46e5' },
+      { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+      { name: 'apple-mobile-web-app-title', content: 'ControleViagens' },
+      { name: 'mobile-web-app-capable', content: 'yes' }
+    ];
+
+    metaTags.forEach(tag => {
+      let existingTag = document.querySelector(`meta[name="${tag.name}"]`);
+      if (!existingTag) {
+        existingTag = document.createElement('meta');
+        existingTag.name = tag.name;
+        document.head.appendChild(existingTag);
+      }
+      existingTag.content = tag.content;
+    });
+
+  }, []);
+
+  // Função de login
   const fazerLogin = () => {
-    // Login como admin
     if (loginData.usuario === credenciaisAdmin.usuario && loginData.senha === credenciaisAdmin.senha) {
       setUsuarioLogado('Administrador');
       setTipoUsuario('admin');
@@ -128,7 +287,6 @@ const App = () => {
       return;
     }
     
-    // Login como usuário do sistema
     const usuario = usuarios.find(u => 
       u.nome.toLowerCase() === loginData.usuario.toLowerCase() && 
       u.senha === loginData.senha &&
@@ -184,161 +342,6 @@ const App = () => {
       diversidades: '',
       ordemServico: ''
     });
-  };
-
-  // Funções CRUD
-  const adicionarUsuario = () => {
-    if (novoUsuario.nome && novoUsuario.senha) {
-      const novoId = Math.max(...usuarios.map(u => u.id), 0) + 1;
-      setUsuarios([...usuarios, { 
-        id: novoId, 
-        ...novoUsuario, 
-        status: 'ativo' 
-      }]);
-      setNovoUsuario({ nome: '', senha: '', tipo: 'motorista' });
-    }
-  };
-
-  const adicionarVeiculo = () => {
-    if (novoVeiculo.prefixo && novoVeiculo.placa && novoVeiculo.modelo) {
-      const novoId = Math.max(...veiculos.map(v => v.id), 0) + 1;
-      setVeiculos([...veiculos, { 
-        id: novoId, 
-        ...novoVeiculo, 
-        status: 'ativo' 
-      }]);
-      setNovoVeiculo({ prefixo: '', placa: '', modelo: '' });
-    }
-  };
-
-  const adicionarCidade = () => {
-    if (novaCidade.nome && novaCidade.uf) {
-      const novoId = Math.max(...cidades.map(c => c.id), 0) + 1;
-      setCidades([...cidades, { 
-        id: novoId, 
-        ...novaCidade 
-      }]);
-      setNovaCidade({ nome: '', uf: '' });
-    }
-  };
-
-  const removerUsuario = (id) => {
-    setUsuarios(usuarios.filter(u => u.id !== id));
-  };
-
-  const removerVeiculo = (id) => {
-    setVeiculos(veiculos.filter(v => v.id !== id));
-  };
-
-  const liberarVeiculo = (id) => {
-    const veiculo = veiculos.find(v => v.id === id);
-    if (!veiculo) return;
-    
-    // Verificar se ainda há problemas pendentes para este veículo
-    const problemasRestantes = viagens.filter(v => 
-      v.prefixo === veiculo.prefixo && 
-      ((v.itensNaoConformes?.some(item => !item.resolvido)) || 
-       (v.ordemServico && v.ordemServico.trim() && v.statusManutencao !== 'resolvida'))
-    );
-    
-    if (problemasRestantes.length > 0) {
-      const confirmar = confirm(
-        `⚠️ ATENÇÃO!\n\nO veículo ${veiculo.prefixo} ainda possui ${problemasRestantes.length} problema(s) não resolvido(s).\n\nTem certeza que deseja liberar o veículo mesmo assim?\n\n(Recomenda-se resolver todos os problemas antes da liberação)`
-      );
-      
-      if (!confirmar) return;
-    }
-    
-    setVeiculos(veiculos.map(v => 
-      v.id === id ? { ...v, status: 'ativo' } : v
-    ));
-    
-    alert(`✅ Veículo ${veiculo.prefixo} foi liberado e está disponível para uso!`);
-  };
-
-  const colocarEmManutencao = (prefixo) => {
-    setVeiculos(veiculos.map(v => 
-      v.prefixo === prefixo ? { ...v, status: 'manutencao' } : v
-    ));
-    
-    // Marcar as viagens deste veículo como "em tratamento"
-    setViagens(viagens.map(v => 
-      v.prefixo === prefixo && (v.ordemServico || v.checklist?.some(c => c.status === 'nao-conforme'))
-        ? { ...v, statusManutencao: 'em_tratamento' }
-        : v
-    ));
-    
-    alert(`🔧 Veículo ${prefixo} foi colocado em manutenção.`);
-  };
-
-  const resolverItemChecklist = (viagemId, itemId) => {
-    setViagens(viagens.map(v => 
-      v.id === viagemId 
-        ? {
-            ...v,
-            itensNaoConformes: v.itensNaoConformes?.map(item => 
-              item.id === itemId ? { ...item, resolvido: true } : item
-            )
-          }
-        : v
-    ));
-    
-    // Verificar se todos os itens desta viagem foram resolvidos
-    const viagem = viagens.find(v => v.id === viagemId);
-    if (viagem) {
-      const itensRestantes = viagem.itensNaoConformes?.filter(item => item.id !== itemId && !item.resolvido) || [];
-      const osResolvida = viagem.statusManutencao === 'resolvida';
-      
-      if (itensRestantes.length === 0 && osResolvida) {
-        // Verificar se este veículo não tem mais pendências em outras viagens
-        const outrasViagensProblemas = viagens.filter(v => 
-          v.prefixo === viagem.prefixo && 
-          v.id !== viagemId &&
-          ((v.itensNaoConformes?.some(item => !item.resolvido)) || 
-           (v.ordemServico && v.statusManutencao !== 'resolvida'))
-        );
-        
-        if (outrasViagensProblemas.length === 0) {
-          // Perguntar se quer liberar o veículo
-          if (confirm(`Todos os problemas do veículo ${viagem.prefixo} foram resolvidos. Deseja liberar o veículo para uso?`)) {
-            liberarVeiculo(veiculos.find(v => v.prefixo === viagem.prefixo)?.id);
-          }
-        }
-      }
-    }
-    
-    alert('✅ Item do checklist resolvido!');
-  };
-
-  const processarOS = (viagemId) => {
-    const viagem = viagens.find(v => v.id === viagemId);
-    if (viagem) {
-      setViagens(viagens.map(v => 
-        v.id === viagemId ? { ...v, statusManutencao: 'resolvida' } : v
-      ));
-      
-      // Verificar se todos os itens desta viagem foram resolvidos
-      const itensNaoResolvidos = viagem.itensNaoConformes?.filter(item => !item.resolvido) || [];
-      
-      if (itensNaoResolvidos.length === 0) {
-        // Verificar se este veículo não tem mais pendências em outras viagens
-        const outrasViagensProblemas = viagens.filter(v => 
-          v.prefixo === viagem.prefixo && 
-          v.id !== viagemId &&
-          ((v.itensNaoConformes?.some(item => !item.resolvido)) || 
-           (v.ordemServico && v.statusManutencao !== 'resolvida'))
-        );
-        
-        if (outrasViagensProblemas.length === 0) {
-          // Perguntar se quer liberar o veículo
-          if (confirm(`Todos os problemas do veículo ${viagem.prefixo} foram resolvidos. Deseja liberar o veículo para uso?`)) {
-            liberarVeiculo(veiculos.find(v => v.prefixo === viagem.prefixo)?.id);
-          }
-        }
-      }
-      
-      alert(`✅ Ordem de serviço do veículo ${viagem.prefixo} foi processada!`);
-    }
   };
 
   // Funções de autocomplete
@@ -407,41 +410,38 @@ const App = () => {
       return;
     }
     
-    // Verificar se há itens não conformes no checklist
     const itensNaoConformes = checklist.filter(item => item.status === 'nao-conforme');
-    const temProblemas = itensNaoConformes.length > 0 || 
-                        dadosViagem.diversidades.trim() !== '' || 
-                        dadosViagem.ordemServico.trim() !== '';
+    let osAutomatica = '';
+    
+    if (itensNaoConformes.length > 0) {
+      osAutomatica = `CHECKLIST - Itens não conformes: ${itensNaoConformes.map(item => 
+        `${item.item}${item.observacao ? ` (${item.observacao})` : ''}`
+      ).join('; ')}`;
+    }
+    
+    let ordemServicoCompleta = '';
+    if (dadosViagem.ordemServico.trim() && osAutomatica) {
+      ordemServicoCompleta = `${dadosViagem.ordemServico.trim()}\n\n${osAutomatica}`;
+    } else if (dadosViagem.ordemServico.trim()) {
+      ordemServicoCompleta = dadosViagem.ordemServico.trim();
+    } else if (osAutomatica) {
+      ordemServicoCompleta = osAutomatica;
+    }
     
     const novaViagem = {
       id: viagens.length + 1,
       ...dadosViagem,
+      ordemServico: ordemServicoCompleta,
       checklist: [...checklist],
       dataHora: new Date().toLocaleString(),
       kmPercorridos: kmFinal - kmInicial,
-      temProblemas,
-      itensNaoConformes: itensNaoConformes.map(item => ({
-        ...item,
-        resolvido: false,
-        id: Math.random().toString(36).substr(2, 9) // ID único para cada item
-      }))
+      temProblemas: checklist.some(item => item.status === 'nao-conforme') || 
+                   dadosViagem.diversidades.trim() !== '' || 
+                   ordemServicoCompleta.trim() !== '',
+      precisaManutencao: itensNaoConformes.length > 0 || dadosViagem.ordemServico.trim() !== ''
     };
     
     setViagens([...viagens, novaViagem]);
-    
-    // Se há itens não conformes, colocar veículo automaticamente em manutenção
-    if (itensNaoConformes.length > 0) {
-      setVeiculos(veiculos.map(v => 
-        v.prefixo === dadosViagem.prefixo ? { ...v, status: 'manutencao' } : v
-      ));
-      
-      alert(`⚠️ Viagem concluída!\n\nVeículo ${dadosViagem.prefixo} foi automaticamente colocado em manutenção devido aos itens não conformes encontrados:\n\n${itensNaoConformes.map(item => `• ${item.item}: ${item.observacao}`).join('\n')}`);
-    } else if (dadosViagem.ordemServico.trim()) {
-      alert('✅ Viagem concluída!\n\n⚠️ Ordem de serviço registrada para o veículo.');
-    } else {
-      alert('✅ Viagem concluída com sucesso!');
-    }
-    
     setEtapa('concluida');
   };
 
@@ -480,100 +480,86 @@ const App = () => {
            checklist.every(item => item.obrigatorio ? item.status !== 'pendente' : true);
   };
 
-  const verDetalhesViagem = (viagem) => {
-    setViagemDetalhada(viagem);
-    setTela('detalhes-viagem');
-  };
-
-  // Componente de Modal para os cartões
-  const Modal = ({ titulo, children, onFechar }) => (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        maxWidth: '600px',
-        width: '100%',
-        maxHeight: '80vh',
-        overflow: 'auto',
-        position: 'relative'
-      }}>
-        <div style={{
-          padding: '24px',
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>{titulo}</h2>
-          <button
-            onClick={onFechar}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: '#6b7280'
-            }}
-          >
-            ×
-          </button>
-        </div>
-        <div style={{ padding: '24px' }}>
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-
-  // Função para handle do Enter no login
   const handleLoginKeyPress = (e) => {
     if (e.key === 'Enter') {
       fazerLogin();
     }
   };
 
+  // Estilos responsivos para mobile
+  const isMobile = window.innerWidth <= 768;
+  
+  const mobileStyles = {
+    container: {
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: isMobile ? '10px' : '20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflowY: 'auto'
+    },
+    card: {
+      maxWidth: isMobile ? '95%' : '400px',
+      width: '100%',
+      backgroundColor: 'white',
+      borderRadius: '12px',
+      padding: isMobile ? '20px' : '40px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+      margin: '20px 0'
+    },
+    input: {
+      width: '100%',
+      padding: isMobile ? '14px' : '12px',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      fontSize: isMobile ? '18px' : '16px',
+      boxSizing: 'border-box',
+      WebkitAppearance: 'none',
+      appearance: 'none'
+    },
+    button: {
+      width: '100%',
+      backgroundColor: '#4f46e5',
+      color: 'white',
+      padding: isMobile ? '16px' : '12px',
+      border: 'none',
+      borderRadius: '8px',
+      fontSize: isMobile ? '18px' : '16px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      marginBottom: '20px',
+      WebkitAppearance: 'none',
+      appearance: 'none'
+    },
+    header: {
+      padding: isMobile ? '12px 16px' : '16px 24px',
+      fontSize: isMobile ? '16px' : '18px'
+    },
+    viagemCard: {
+      maxWidth: isMobile ? '95%' : '500px',
+      margin: '0 auto',
+      backgroundColor: 'white',
+      borderRadius: '12px',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+      padding: isMobile ? '20px' : '32px'
+    }
+  };
+
   // TELA DE LOGIN
   if (tela === 'login') {
     return (
-      <div style={{ 
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflowY: 'auto' // Adiciona rolagem
-      }}>
-        <div style={{
-          maxWidth: '400px',
-          width: '100%',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '40px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-          margin: '20px 0' // Espaço para rolagem
-        }}>
+      <div style={mobileStyles.container}>
+        <div style={mobileStyles.card}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <Truck style={{ 
-              width: '60px', 
-              height: '60px', 
+              width: isMobile ? '50px' : '60px', 
+              height: isMobile ? '50px' : '60px', 
               color: '#4f46e5',
               margin: '0 auto 15px auto'
             }} />
             <h1 style={{ 
-              fontSize: '32px', 
+              fontSize: isMobile ? '24px' : '32px', 
               fontWeight: 'bold', 
               color: '#1f2937',
               margin: 0
@@ -583,7 +569,7 @@ const App = () => {
             <p style={{ 
               color: '#6b7280', 
               marginTop: '8px',
-              fontSize: '16px'
+              fontSize: isMobile ? '14px' : '16px'
             }}>
               Controle de Frota de Ônibus
             </p>
@@ -605,14 +591,7 @@ const App = () => {
               onChange={(e) => setLoginData({...loginData, usuario: e.target.value})}
               onKeyPress={handleLoginKeyPress}
               placeholder="Nome do usuário"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '16px',
-                boxSizing: 'border-box'
-              }}
+              style={mobileStyles.input}
             />
           </div>
           
@@ -632,37 +611,19 @@ const App = () => {
               onChange={(e) => setLoginData({...loginData, senha: e.target.value})}
               onKeyPress={handleLoginKeyPress}
               placeholder="Senha"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '16px',
-                boxSizing: 'border-box'
-              }}
+              style={mobileStyles.input}
             />
           </div>
           
           <button
             onClick={fazerLogin}
-            style={{
-              width: '100%',
-              backgroundColor: '#4f46e5',
-              color: 'white',
-              padding: '12px',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              marginBottom: '20px'
-            }}
+            style={mobileStyles.button}
           >
             Entrar
           </button>
           
           <div style={{ 
-            fontSize: '12px', 
+            fontSize: isMobile ? '11px' : '12px', 
             color: '#6b7280', 
             textAlign: 'center',
             lineHeight: '1.4'
@@ -677,1075 +638,30 @@ const App = () => {
     );
   }
 
-  // DASHBOARD ADMIN
-  if (tela === 'dashboard-admin') {
-    const motoristas = usuarios.filter(u => u.tipo === 'motorista');
-    const viagensComProblemas = viagens.filter(v => v.temProblemas).length;
-    const veiculosManutencao = veiculos.filter(v => v.status === 'manutencao').length;
-    const problemasAtivos = viagens.reduce((total, viagem) => {
-      const itensNaoResolvidos = viagem.itensNaoConformes?.filter(item => !item.resolvido)?.length || 0;
-      const osNaoResolvida = (viagem.ordemServico && viagem.ordemServico.trim() && viagem.statusManutencao !== 'resolvida') ? 1 : 0;
-      return total + itensNaoResolvidos + osNaoResolvida;
-    }, 0);
-    
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
-        <header style={{ 
-          backgroundColor: 'white', 
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          padding: '16px 0'
-        }}>
-          <div style={{ 
-            maxWidth: '1200px', 
-            margin: '0 auto', 
-            padding: '0 24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
-              Painel Administrativo
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ color: '#6b7280' }}>Olá, {usuarioLogado}</span>
-              <button
-                onClick={logout}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  color: '#dc2626',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '16px'
-                }}
-              >
-                <LogOut size={20} />
-                <span>Sair</span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
-          {/* Cards de estatísticas - Agora clicáveis */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '24px',
-            marginBottom: '32px'
-          }}>
-            <div 
-              onClick={() => setModalAtivo('usuarios')}
-              style={{ 
-                backgroundColor: 'white', 
-                padding: '24px', 
-                borderRadius: '8px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                transition: 'transform 0.2s',
-              }}
-              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <Users style={{ color: '#2563eb', marginRight: '12px' }} size={32} />
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Usuários</h3>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#2563eb', margin: '4px 0 0 0' }}>
-                    {usuarios.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div 
-              onClick={() => setModalAtivo('veiculos')}
-              style={{ 
-                backgroundColor: 'white', 
-                padding: '24px', 
-                borderRadius: '8px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                transition: 'transform 0.2s',
-              }}
-              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <Truck style={{ color: '#059669', marginRight: '12px' }} size={32} />
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Veículos</h3>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#059669', margin: '4px 0 0 0' }}>
-                    {veiculos.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div 
-              onClick={() => setModalAtivo('cidades')}
-              style={{ 
-                backgroundColor: 'white', 
-                padding: '24px', 
-                borderRadius: '8px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                transition: 'transform 0.2s',
-              }}
-              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <MapPin style={{ color: '#7c3aed', marginRight: '12px' }} size={32} />
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Cidades</h3>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#7c3aed', margin: '4px 0 0 0' }}>
-                    {cidades.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div 
-              onClick={() => setModalAtivo('viagens')}
-              style={{ 
-                backgroundColor: 'white', 
-                padding: '24px', 
-                borderRadius: '8px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                transition: 'transform 0.2s',
-              }}
-              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <FileText style={{ color: '#ea580c', marginRight: '12px' }} size={32} />
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Viagens</h3>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#ea580c', margin: '4px 0 0 0' }}>
-                    {viagens.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div 
-              onClick={() => setModalAtivo('ocorrencias')}
-              style={{ 
-                backgroundColor: 'white', 
-                padding: '24px', 
-                borderRadius: '8px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                transition: 'transform 0.2s',
-              }}
-              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <AlertTriangle style={{ color: '#dc2626', marginRight: '12px' }} size={32} />
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Problemas Ativos</h3>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626', margin: '4px 0 0 0' }}>
-                    {problemasAtivos}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Modais dos cartões */}
-        {modalAtivo === 'usuarios' && (
-          <Modal titulo="Gerenciar Usuários" onFechar={() => setModalAtivo(null)}>
-            <div style={{ marginBottom: '16px' }}>
-              <input
-                type="text"
-                placeholder="Nome do usuário"
-                value={novoUsuario.nome}
-                onChange={(e) => setNovoUsuario({...novoUsuario, nome: e.target.value})}
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '4px', 
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <input
-                type="password"
-                placeholder="Senha"
-                value={novoUsuario.senha}
-                onChange={(e) => setNovoUsuario({...novoUsuario, senha: e.target.value})}
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '4px', 
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <select
-                value={novoUsuario.tipo}
-                onChange={(e) => setNovoUsuario({...novoUsuario, tipo: e.target.value})}
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '4px', 
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <option value="motorista">Motorista</option>
-                <option value="manutencao">Manutenção</option>
-                <option value="gerencia">Gerência</option>
-              </select>
-              <button
-                onClick={adicionarUsuario}
-                style={{ 
-                  width: '100%', 
-                  backgroundColor: '#2563eb', 
-                  color: 'white', 
-                  padding: '8px 16px', 
-                  border: 'none', 
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
-              >
-                Adicionar Usuário
-              </button>
-            </div>
-            
-            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-              {usuarios.map(usuario => (
-                <div key={usuario.id} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  padding: '8px', 
-                  backgroundColor: '#f9fafb', 
-                  borderRadius: '4px',
-                  marginBottom: '4px'
-                }}>
-                  <div>
-                    <span style={{ fontWeight: '500' }}>{usuario.nome}</span>
-                    <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>
-                      ({usuario.tipo})
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => removerUsuario(usuario.id)}
-                    style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </Modal>
-        )}
-
-        {modalAtivo === 'veiculos' && (
-          <Modal titulo="Gerenciar Veículos" onFechar={() => setModalAtivo(null)}>
-            <div style={{ marginBottom: '16px' }}>
-              <input
-                type="text"
-                placeholder="Prefixo"
-                value={novoVeiculo.prefixo}
-                onChange={(e) => setNovoVeiculo({...novoVeiculo, prefixo: e.target.value})}
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '4px', 
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Placa"
-                value={novoVeiculo.placa}
-                onChange={(e) => setNovoVeiculo({...novoVeiculo, placa: e.target.value})}
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '4px', 
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Modelo"
-                value={novoVeiculo.modelo}
-                onChange={(e) => setNovoVeiculo({...novoVeiculo, modelo: e.target.value})}
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '4px', 
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <button
-                onClick={adicionarVeiculo}
-                style={{ 
-                  width: '100%', 
-                  backgroundColor: '#059669', 
-                  color: 'white', 
-                  padding: '8px 16px', 
-                  border: 'none', 
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
-              >
-                Adicionar Veículo
-              </button>
-            </div>
-            
-            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-              {veiculos.map(veiculo => (
-                <div key={veiculo.id} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  padding: '8px', 
-                  backgroundColor: veiculo.status === 'manutencao' ? '#fef2f2' : '#f9fafb', 
-                  borderRadius: '4px',
-                  marginBottom: '4px'
-                }}>
-                  <div>
-                    <span style={{ fontWeight: '500' }}>{veiculo.prefixo}</span>
-                    <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>
-                      {veiculo.placa} - {veiculo.status}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    {veiculo.status === 'manutencao' && (
-                      <button
-                        onClick={() => liberarVeiculo(veiculo.id)}
-                        style={{
-                          backgroundColor: '#059669',
-                          color: 'white',
-                          padding: '4px 8px',
-                          border: 'none',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Liberar
-                      </button>
-                    )}
-                    <button
-                      onClick={() => removerVeiculo(veiculo.id)}
-                      style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Modal>
-        )}
-
-        {modalAtivo === 'cidades' && (
-          <Modal titulo="Gerenciar Cidades" onFechar={() => setModalAtivo(null)}>
-            <div style={{ marginBottom: '16px' }}>
-              <input
-                type="text"
-                placeholder="Nome da cidade"
-                value={novaCidade.nome}
-                onChange={(e) => setNovaCidade({...novaCidade, nome: e.target.value})}
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '4px', 
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <input
-                type="text"
-                placeholder="UF (ex: SP)"
-                value={novaCidade.uf}
-                onChange={(e) => setNovaCidade({...novaCidade, uf: e.target.value.toUpperCase()})}
-                maxLength="2"
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '4px', 
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <button
-                onClick={adicionarCidade}
-                style={{ 
-                  width: '100%', 
-                  backgroundColor: '#7c3aed', 
-                  color: 'white', 
-                  padding: '8px 16px', 
-                  border: 'none', 
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
-              >
-                Adicionar Cidade
-              </button>
-            </div>
-            
-            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-              {cidades.map(cidade => (
-                <div key={cidade.id} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  padding: '8px', 
-                  backgroundColor: '#f9fafb', 
-                  borderRadius: '4px',
-                  marginBottom: '4px'
-                }}>
-                  <span>{cidade.nome} - {cidade.uf}</span>
-                </div>
-              ))}
-            </div>
-          </Modal>
-        )}
-
-        {modalAtivo === 'viagens' && (
-          <Modal titulo="Relatório de Viagens" onFechar={() => setModalAtivo(null)}>
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-              {viagens.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#6b7280' }}>Nenhuma viagem realizada ainda.</p>
-              ) : (
-                viagens.map(viagem => (
-                  <div key={viagem.id} style={{ 
-                    padding: '16px', 
-                    backgroundColor: viagem.temProblemas ? '#fef2f2' : '#f9fafb', 
-                    borderRadius: '8px',
-                    marginBottom: '8px',
-                    border: viagem.temProblemas ? '1px solid #fecaca' : '1px solid #e5e7eb'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <strong>{viagem.motorista}</strong>
-                      <span style={{ fontSize: '12px', color: '#6b7280' }}>{viagem.dataHora}</span>
-                    </div>
-                    <p style={{ margin: '4px 0', fontSize: '14px' }}>
-                      <strong>Rota:</strong> {viagem.origem} → {viagem.destino}
-                    </p>
-                    <p style={{ margin: '4px 0', fontSize: '14px' }}>
-                      <strong>Veículo:</strong> {viagem.prefixo} | <strong>KM:</strong> {viagem.kmPercorridos} km
-                    </p>
-                    {viagem.temProblemas && (
-                      <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fee2e2', borderRadius: '4px' }}>
-                        <span style={{ fontSize: '12px', color: '#991b1b', fontWeight: '500' }}>⚠️ Viagem com ocorrências</span>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </Modal>
-        )}
-
-        {modalAtivo === 'ocorrencias' && (
-          <Modal titulo="Problemas Ativos" onFechar={() => setModalAtivo(null)}>
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-              {(() => {
-                const problemasAtivos = [];
-                viagens.forEach(viagem => {
-                  // Adicionar itens não conformes não resolvidos
-                  const itensNaoResolvidos = viagem.itensNaoConformes?.filter(item => !item.resolvido) || [];
-                  itensNaoResolvidos.forEach(item => {
-                    problemasAtivos.push({
-                      tipo: 'checklist',
-                      viagem,
-                      descricao: `${item.item}: ${item.observacao}`,
-                      status: 'Pendente'
-                    });
-                  });
-                  
-                  // Adicionar OS não resolvidas
-                  if (viagem.ordemServico && viagem.ordemServico.trim() && viagem.statusManutencao !== 'resolvida') {
-                    problemasAtivos.push({
-                      tipo: 'os',
-                      viagem,
-                      descricao: viagem.ordemServico,
-                      status: 'Pendente'
-                    });
-                  }
-                });
-
-                if (problemasAtivos.length === 0) {
-                  return (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#059669' }}>
-                      <CheckCircle size={48} style={{ marginBottom: '12px' }} />
-                      <p style={{ fontSize: '16px', fontWeight: '500' }}>Nenhum problema ativo!</p>
-                      <p style={{ fontSize: '14px', color: '#6b7280' }}>Todos os veículos estão em perfeitas condições.</p>
-                    </div>
-                  );
-                }
-
-                return problemasAtivos.map((problema, idx) => (
-                  <div key={idx} style={{ 
-                    padding: '16px', 
-                    backgroundColor: '#fef2f2', 
-                    borderRadius: '8px',
-                    marginBottom: '8px',
-                    border: '1px solid #fecaca'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ 
-                          backgroundColor: '#dc2626', 
-                          color: 'white', 
-                          padding: '2px 8px', 
-                          borderRadius: '12px', 
-                          fontSize: '11px',
-                          fontWeight: '500'
-                        }}>
-                          {problema.tipo === 'checklist' ? 'CHECKLIST' : 'ORDEM DE SERVIÇO'}
-                        </span>
-                        <strong style={{ color: '#991b1b' }}>Veículo: {problema.viagem.prefixo}</strong>
-                      </div>
-                      <span style={{ fontSize: '12px', color: '#6b7280' }}>{problema.viagem.dataHora}</span>
-                    </div>
-                    <p style={{ margin: '4px 0', fontSize: '14px' }}>
-                      <strong>Motorista:</strong> {problema.viagem.motorista}
-                    </p>
-                    <p style={{ margin: '4px 0', fontSize: '14px' }}>
-                      <strong>Rota:</strong> {problema.viagem.origem} → {problema.viagem.destino}
-                    </p>
-                    <div style={{ 
-                      marginTop: '8px', 
-                      padding: '8px', 
-                      backgroundColor: '#fee2e2', 
-                      borderRadius: '4px',
-                      borderLeft: '4px solid #dc2626'
-                    }}>
-                      <strong style={{ color: '#991b1b', fontSize: '13px' }}>Problema:</strong>
-                      <p style={{ margin: '2px 0 0 0', color: '#991b1b', fontSize: '13px' }}>{problema.descricao}</p>
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-          </Modal>
-        )}
-      </div>
-    );
-  }
-
-  // DASHBOARD MANUTENÇÃO
-  if (tela === 'dashboard-manutencao') {
-    const veiculosManutencao = veiculos.filter(v => v.status === 'manutencao');
-    const viagensComOS = viagens.filter(v => 
-      v.ordemServico && 
-      v.ordemServico.trim() !== '' && 
-      v.statusManutencao !== 'resolvida'
-    );
-    
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
-        <header style={{ 
-          backgroundColor: 'white', 
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          padding: '16px 0'
-        }}>
-          <div style={{ 
-            maxWidth: '1200px', 
-            margin: '0 auto', 
-            padding: '0 24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
-              Painel de Manutenção
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ color: '#6b7280' }}>Olá, {usuarioLogado}</span>
-              <button
-                onClick={logout}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  color: '#dc2626',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '16px'
-                }}
-              >
-                <LogOut size={20} />
-                <span>Sair</span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
-          {/* Veículos em Manutenção */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '8px', 
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
-            padding: '24px',
-            marginBottom: '24px'
-          }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-              <Wrench style={{ marginRight: '8px' }} size={24} />
-              Veículos em Manutenção ({veiculosManutencao.length})
-            </h2>
-            
-            {veiculosManutencao.length === 0 ? (
-              <p style={{ color: '#6b7280', textAlign: 'center', padding: '20px' }}>
-                Nenhum veículo em manutenção no momento.
-              </p>
-            ) : (
-              <div>
-                {veiculosManutencao.map(veiculo => {
-                  // Buscar todas as viagens com problemas para este veículo
-                  const viagensVeiculo = viagens.filter(v => v.prefixo === veiculo.prefixo);
-                  const problemasVeiculo = viagensVeiculo.reduce((acc, viagem) => {
-                    // Adicionar itens não conformes não resolvidos
-                    const itensNaoResolvidos = viagem.itensNaoConformes?.filter(item => !item.resolvido) || [];
-                    itensNaoResolvidos.forEach(item => {
-                      acc.push({
-                        tipo: 'checklist',
-                        viagemId: viagem.id,
-                        itemId: item.id,
-                        descricao: `${item.item}: ${item.observacao}`,
-                        data: viagem.dataHora,
-                        motorista: viagem.motorista
-                      });
-                    });
-                    
-                    // Adicionar OS não resolvidas
-                    if (viagem.ordemServico && viagem.ordemServico.trim() && viagem.statusManutencao !== 'resolvida') {
-                      acc.push({
-                        tipo: 'os',
-                        viagemId: viagem.id,
-                        descricao: viagem.ordemServico,
-                        data: viagem.dataHora,
-                        motorista: viagem.motorista
-                      });
-                    }
-                    
-                    return acc;
-                  }, []);
-                  
-                  return (
-                    <div key={veiculo.id} style={{ 
-                      padding: '16px', 
-                      backgroundColor: '#fef2f2', 
-                      borderRadius: '8px',
-                      marginBottom: '12px',
-                      border: '1px solid #fecaca'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <div>
-                          <span style={{ fontWeight: '500', fontSize: '16px' }}>{veiculo.prefixo}</span>
-                          <span style={{ fontSize: '14px', color: '#6b7280', marginLeft: '8px' }}>
-                            {veiculo.placa} - {veiculo.modelo}
-                          </span>
-                          <span style={{ 
-                            marginLeft: '12px', 
-                            fontSize: '12px', 
-                            backgroundColor: '#fee2e2', 
-                            color: '#991b1b', 
-                            padding: '2px 6px', 
-                            borderRadius: '12px' 
-                          }}>
-                            {problemasVeiculo.length} problema(s) pendente(s)
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => liberarVeiculo(veiculo.id)}
-                          style={{
-                            backgroundColor: '#059669',
-                            color: 'white',
-                            padding: '8px 16px',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '14px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <CheckCircle size={16} />
-                          Liberar Veículo (Forçar)
-                        </button>
-                      </div>
-                      
-                      {/* Lista detalhada de problemas */}
-                      {problemasVeiculo.length > 0 && (
-                        <div style={{ marginTop: '12px' }}>
-                          <strong style={{ fontSize: '14px', color: '#991b1b', marginBottom: '8px', display: 'block' }}>
-                            Problemas a serem resolvidos:
-                          </strong>
-                          {problemasVeiculo.map((problema, idx) => (
-                            <div key={idx} style={{ 
-                              marginBottom: '8px', 
-                              padding: '12px', 
-                              backgroundColor: '#fee2e2', 
-                              borderRadius: '6px',
-                              border: '1px solid #fecaca'
-                            }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#991b1b' }}>
-                                    {problema.tipo === 'checklist' ? '🔧 Checklist' : '📝 Ordem de Serviço'}
-                                  </div>
-                                  <div style={{ fontSize: '13px', color: '#7f1d1d', marginTop: '2px' }}>
-                                    {problema.descricao}
-                                  </div>
-                                  <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
-                                    {problema.data} | {problema.motorista}
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    if (problema.tipo === 'checklist') {
-                                      resolverItemChecklist(problema.viagemId, problema.itemId);
-                                    } else {
-                                      processarOS(problema.viagemId);
-                                    }
-                                  }}
-                                  style={{
-                                    backgroundColor: '#059669',
-                                    color: 'white',
-                                    padding: '4px 8px',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    fontSize: '11px',
-                                    cursor: 'pointer',
-                                    marginLeft: '8px',
-                                    flexShrink: 0
-                                  }}
-                                >
-                                  ✅ Resolver
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Ordens de Serviço Pendentes */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '8px', 
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
-            padding: '24px'
-          }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-              <FileText style={{ marginRight: '8px' }} size={24} />
-              Ordens de Serviço Pendentes ({viagensComOS.length})
-            </h2>
-            
-            {viagensComOS.length === 0 ? (
-              <p style={{ color: '#6b7280', textAlign: 'center', padding: '20px' }}>
-                Nenhuma ordem de serviço pendente.
-              </p>
-            ) : (
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                {viagensComOS.map(viagem => (
-                  <div key={viagem.id} style={{ 
-                    padding: '16px', 
-                    backgroundColor: '#fffbeb', 
-                    borderRadius: '8px',
-                    marginBottom: '8px',
-                    border: '1px solid #fed7aa'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <strong style={{ color: '#92400e' }}>Veículo: {viagem.prefixo}</strong>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          onClick={() => colocarEmManutencao(viagem.prefixo)}
-                          style={{
-                            backgroundColor: '#dc2626',
-                            color: 'white',
-                            padding: '4px 8px',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Colocar em Manutenção
-                        </button>
-                        <button
-                          onClick={() => processarOS(viagem.id)}
-                          style={{
-                            backgroundColor: '#059669',
-                            color: 'white',
-                            padding: '4px 8px',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Processar OS
-                        </button>
-                      </div>
-                    </div>
-                    <p style={{ margin: '4px 0', fontSize: '14px' }}>
-                      <strong>Data:</strong> {viagem.dataHora}
-                    </p>
-                    <p style={{ margin: '4px 0', fontSize: '14px' }}>
-                      <strong>Motorista:</strong> {viagem.motorista}
-                    </p>
-                    <p style={{ margin: '4px 0', fontSize: '14px' }}>
-                      <strong>Rota:</strong> {viagem.origem} → {viagem.destino}
-                    </p>
-                    <div style={{ 
-                      marginTop: '12px', 
-                      padding: '12px', 
-                      backgroundColor: '#fef3c7', 
-                      borderRadius: '4px',
-                      borderLeft: '4px solid #f59e0b'
-                    }}>
-                      <strong style={{ color: '#92400e' }}>Ordem de Serviço:</strong>
-                      <p style={{ margin: '4px 0 0 0', color: '#92400e' }}>{viagem.ordemServico}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // DASHBOARD GERÊNCIA
-  if (tela === 'dashboard-gerencia') {
-    const motoristas = usuarios.filter(u => u.tipo === 'motorista');
-    const viagensComProblemas = viagens.filter(v => v.temProblemas).length;
-    const totalKm = viagens.reduce((total, viagem) => total + viagem.kmPercorridos, 0);
-    const problemasAtivos = viagens.reduce((total, viagem) => {
-      const itensNaoResolvidos = viagem.itensNaoConformes?.filter(item => !item.resolvido)?.length || 0;
-      const osNaoResolvida = (viagem.ordemServico && viagem.ordemServico.trim() && viagem.statusManutencao !== 'resolvida') ? 1 : 0;
-      return total + itensNaoResolvidos + osNaoResolvida;
-    }, 0);
-    
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
-        <header style={{ 
-          backgroundColor: 'white', 
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          padding: '16px 0'
-        }}>
-          <div style={{ 
-            maxWidth: '1200px', 
-            margin: '0 auto', 
-            padding: '0 24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
-              Painel Gerencial
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ color: '#6b7280' }}>Olá, {usuarioLogado}</span>
-              <button
-                onClick={logout}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  color: '#dc2626',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '16px'
-                }}
-              >
-                <LogOut size={20} />
-                <span>Sair</span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
-          {/* Cards de estatísticas */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '24px',
-            marginBottom: '32px'
-          }}>
-            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <Users style={{ color: '#2563eb', marginRight: '12px' }} size={32} />
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Motoristas</h3>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#2563eb', margin: '4px 0 0 0' }}>
-                    {motoristas.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <Truck style={{ color: '#059669', marginRight: '12px' }} size={32} />
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Veículos</h3>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#059669', margin: '4px 0 0 0' }}>
-                    {veiculos.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <FileText style={{ color: '#ea580c', marginRight: '12px' }} size={32} />
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Total Viagens</h3>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#ea580c', margin: '4px 0 0 0' }}>
-                    {viagens.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <MapPin style={{ color: '#7c3aed', marginRight: '12px' }} size={32} />
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Total KM</h3>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#7c3aed', margin: '4px 0 0 0' }}>
-                    {totalKm.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <AlertTriangle style={{ color: '#dc2626', marginRight: '12px' }} size={32} />
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Problemas Ativos</h3>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#dc2626', margin: '4px 0 0 0' }}>
-                    {problemasAtivos}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Relatório Resumido de Viagens */}
-          {viagens.length > 0 && (
-            <div style={{ 
-              backgroundColor: 'white', 
-              borderRadius: '8px', 
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
-              padding: '24px'
-            }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-                <FileText style={{ marginRight: '8px' }} size={24} />
-                Relatório de Viagens (Últimas 10)
-              </h2>
-              
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#f9fafb' }}>
-                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Data/Hora</th>
-                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Motorista</th>
-                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Rota</th>
-                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Veículo</th>
-                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>KM</th>
-                      <th style={{ padding: '8px 16px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {viagens.slice(-10).reverse().map(viagem => (
-                      <tr key={viagem.id} style={{ 
-                        borderBottom: '1px solid #f3f4f6',
-                        backgroundColor: viagem.temProblemas ? '#fef2f2' : 'white'
-                      }}>
-                        <td style={{ padding: '8px 16px', fontSize: '14px' }}>{viagem.dataHora}</td>
-                        <td style={{ padding: '8px 16px', fontSize: '14px' }}>{viagem.motorista}</td>
-                        <td style={{ padding: '8px 16px', fontSize: '14px' }}>{viagem.origem} → {viagem.destino}</td>
-                        <td style={{ padding: '8px 16px', fontSize: '14px' }}>{viagem.prefixo}</td>
-                        <td style={{ padding: '8px 16px', fontSize: '14px' }}>{viagem.kmPercorridos} km</td>
-                        <td style={{ padding: '8px 16px' }}>
-                          {viagem.temProblemas ? (
-                            <div style={{ display: 'flex', alignItems: 'center', color: '#dc2626' }}>
-                              <AlertTriangle size={16} style={{ marginRight: '4px' }} />
-                              <span style={{ fontSize: '12px' }}>Com Ocorrências</span>
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', color: '#059669' }}>
-                              <CheckCircle size={16} style={{ marginRight: '4px' }} />
-                              <span style={{ fontSize: '12px' }}>Normal</span>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // SISTEMA DE CONTROLE DE VIAGEM (MOTORISTAS) - Mantém o código original
+  // SISTEMA DE CONTROLE DE VIAGEM (MOTORISTAS)
   if (tela === 'controle-viagem') {
     if (etapa === 'inicial') {
       return (
         <div style={{ 
           minHeight: '100vh', 
           background: 'linear-gradient(135deg, #bfdbfe 0%, #dbeafe 100%)',
-          padding: '16px'
+          padding: isMobile ? '10px' : '16px'
         }}>
-          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e3a8a' }}>
-              Sistema de Controle de Viagem
+          <header style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}>
+            <h1 style={{ 
+              fontSize: isMobile ? '18px' : '24px', 
+              fontWeight: 'bold', 
+              color: '#1e3a8a',
+              margin: 0
+            }}>
+              {isMobile ? 'Controle de Viagem' : 'Sistema de Controle de Viagem'}
             </h1>
             <button
               onClick={logout}
@@ -1757,22 +673,16 @@ const App = () => {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                fontSize: '16px'
+                fontSize: isMobile ? '14px' : '16px',
+                padding: isMobile ? '8px' : '0'
               }}
             >
-              <LogOut size={20} />
+              <LogOut size={isMobile ? 18 : 20} />
               <span>Sair</span>
             </button>
           </header>
           
-          <div style={{
-            maxWidth: '500px',
-            margin: '0 auto',
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-            padding: '32px'
-          }}>
+          <div style={mobileStyles.viagemCard}>
             
             {/* Campo Motorista */}
             <div style={{ marginBottom: '20px' }}>
@@ -1790,20 +700,21 @@ const App = () => {
                 value={dadosViagem.motorista}
                 disabled
                 style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
+                  ...mobileStyles.input,
                   backgroundColor: '#f3f4f6',
-                  color: '#6b7280',
-                  boxSizing: 'border-box'
+                  color: '#6b7280'
                 }}
               />
             </div>
 
             {/* Origem e Destino */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-              <div style={{ position: 'relative' }}>
+            <div style={{ 
+              display: isMobile ? 'block' : 'grid', 
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+              gap: '16px', 
+              marginBottom: '20px' 
+            }}>
+              <div style={{ position: 'relative', marginBottom: isMobile ? '16px' : '0' }}>
                 <label style={{ 
                   display: 'block', 
                   fontSize: '14px', 
@@ -1827,14 +738,7 @@ const App = () => {
                     }
                   }}
                   placeholder="Digite ou selecione a origem"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    boxSizing: 'border-box'
-                  }}
+                  style={mobileStyles.input}
                 />
                 {mostrarSugestoesOrigem && sugestoesOrigem.length > 0 && (
                   <div style={{
@@ -1861,11 +765,12 @@ const App = () => {
                         style={{
                           width: '100%',
                           textAlign: 'left',
-                          padding: '12px',
+                          padding: isMobile ? '16px 12px' : '12px',
                           border: 'none',
                           borderBottom: '1px solid #f3f4f6',
                           backgroundColor: 'white',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          fontSize: isMobile ? '16px' : '14px'
                         }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
@@ -1902,14 +807,7 @@ const App = () => {
                     }
                   }}
                   placeholder="Digite ou selecione o destino"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    boxSizing: 'border-box'
-                  }}
+                  style={mobileStyles.input}
                 />
                 {mostrarSugestoesDestino && sugestoesDestino.length > 0 && (
                   <div style={{
@@ -1936,11 +834,12 @@ const App = () => {
                         style={{
                           width: '100%',
                           textAlign: 'left',
-                          padding: '12px',
+                          padding: isMobile ? '16px 12px' : '12px',
                           border: 'none',
                           borderBottom: '1px solid #f3f4f6',
                           backgroundColor: 'white',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          fontSize: isMobile ? '16px' : '14px'
                         }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
@@ -1955,8 +854,13 @@ const App = () => {
             </div>
 
             {/* Prefixo e KM Inicial */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-              <div>
+            <div style={{ 
+              display: isMobile ? 'block' : 'grid', 
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+              gap: '16px', 
+              marginBottom: '24px' 
+            }}>
+              <div style={{ marginBottom: isMobile ? '16px' : '0' }}>
                 <label style={{ 
                   display: 'block', 
                   fontSize: '14px', 
@@ -1968,47 +872,24 @@ const App = () => {
                 </label>
                 <select
                   value={dadosViagem.prefixo}
-                  onChange={(e) => handleInputChange('prefixo', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    boxSizing: 'border-box'
+                  onChange={(e) => {
+                    handleInputChange('prefixo', e.target.value);
+                    if (e.target.value) {
+                      const veiculoSelecionado = veiculos.find(v => v.prefixo === e.target.value);
+                      if (veiculoSelecionado && veiculoSelecionado.kmAtual) {
+                        handleInputChange('kmInicial', veiculoSelecionado.kmAtual.toString());
+                      }
+                    }
                   }}
+                  style={mobileStyles.input}
                 >
                   <option value="">Selecione</option>
                   {veiculos.map(veiculo => (
                     <option key={veiculo.id} value={veiculo.prefixo}>
-                      {veiculo.prefixo} - {veiculo.placa} {veiculo.status === 'manutencao' ? '(⚠️ Em Manutenção)' : ''}
+                      {veiculo.prefixo} - {veiculo.placa} {veiculo.status === 'manutencao' ? '(⚠️ Em Manutenção)' : ''} - KM: {veiculo.kmAtual?.toLocaleString() || 'N/A'}
                     </option>
                   ))}
                 </select>
-                
-                {/* Aviso de veículo com pendências */}
-                {dadosViagem.prefixo && veiculos.find(v => v.prefixo === dadosViagem.prefixo)?.status === 'manutencao' && (
-                  <div style={{
-                    marginTop: '8px',
-                    padding: '12px',
-                    backgroundColor: '#fffbeb',
-                    border: '1px solid #fed7aa',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <AlertTriangle size={20} style={{ color: '#f59e0b', flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#92400e', fontSize: '14px' }}>
-                        ⚠️ Veículo com Pendências
-                      </div>
-                      <div style={{ fontSize: '13px', color: '#92400e', marginTop: '2px' }}>
-                        Este veículo possui pendências de manutenção. Viagem permitida, mas informe qualquer problema encontrado.
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
               <div>
                 <label style={{ 
@@ -2022,24 +903,28 @@ const App = () => {
                 </label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   value={dadosViagem.kmInicial}
                   onChange={(e) => handleInputChange('kmInicial', e.target.value)}
-                  placeholder="KM"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    boxSizing: 'border-box'
-                  }}
+                  placeholder={dadosViagem.prefixo ? `KM atual: ${veiculos.find(v => v.prefixo === dadosViagem.prefixo)?.kmAtual?.toLocaleString() || 'N/A'}` : 'KM'}
+                  style={mobileStyles.input}
                 />
+                {dadosViagem.prefixo && (
+                  <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                    💡 KM atual do veículo: {veiculos.find(v => v.prefixo === dadosViagem.prefixo)?.kmAtual?.toLocaleString() || 'N/A'}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Checklist */}
+            {/* Checklist - Otimizado para mobile */}
             <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+              <h3 style={{ 
+                fontSize: isMobile ? '16px' : '18px', 
+                fontWeight: '600', 
+                color: '#1f2937', 
+                marginBottom: '16px' 
+              }}>
                 Checklist de Verificação
               </h3>
               <div>
@@ -2047,24 +932,32 @@ const App = () => {
                   <div key={index} style={{ 
                     backgroundColor: '#f9fafb', 
                     borderRadius: '8px', 
-                    padding: '16px',
+                    padding: isMobile ? '12px' : '16px',
                     marginBottom: '12px'
                   }}>
                     <div style={{ 
                       display: 'flex', 
                       justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      marginBottom: item.status === 'nao-conforme' ? '12px' : 0
+                      alignItems: 'flex-start',
+                      marginBottom: item.status === 'nao-conforme' ? '12px' : 0,
+                      flexWrap: isMobile ? 'wrap' : 'nowrap',
+                      gap: '8px'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: '500' }}>{item.item}</span>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        flex: isMobile ? '1 1 100%' : 'none',
+                        marginBottom: isMobile ? '8px' : '0'
+                      }}>
+                        <span style={{ fontWeight: '500', fontSize: isMobile ? '15px' : '14px' }}>{item.item}</span>
                         {item.obrigatorio ? (
                           <span style={{
                             backgroundColor: '#fef2f2',
                             color: '#991b1b',
-                            padding: '2px 8px',
+                            padding: '2px 6px',
                             borderRadius: '12px',
-                            fontSize: '12px'
+                            fontSize: '11px'
                           }}>
                             Obrigatório
                           </span>
@@ -2072,21 +965,27 @@ const App = () => {
                           <span style={{
                             backgroundColor: '#eff6ff',
                             color: '#1d4ed8',
-                            padding: '2px 8px',
+                            padding: '2px 6px',
                             borderRadius: '12px',
-                            fontSize: '12px'
+                            fontSize: '11px'
                           }}>
                             Opcional
                           </span>
                         )}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '6px',
+                        flex: isMobile ? '1 1 100%' : 'none',
+                        justifyContent: isMobile ? 'flex-end' : 'flex-start'
+                      }}>
                         <button
                           onClick={() => handleChecklistChange(index, 'status', 'conforme')}
                           style={{
-                            padding: '6px 12px',
+                            padding: isMobile ? '8px 12px' : '6px 12px',
                             borderRadius: '4px',
-                            fontSize: '14px',
+                            fontSize: isMobile ? '13px' : '14px',
                             fontWeight: '500',
                             border: 'none',
                             cursor: 'pointer',
@@ -2099,9 +998,9 @@ const App = () => {
                         <button
                           onClick={() => handleChecklistChange(index, 'status', 'nao-conforme')}
                           style={{
-                            padding: '6px 12px',
+                            padding: isMobile ? '8px 12px' : '6px 12px',
                             borderRadius: '4px',
-                            fontSize: '14px',
+                            fontSize: isMobile ? '13px' : '14px',
                             fontWeight: '500',
                             border: 'none',
                             cursor: 'pointer',
@@ -2114,7 +1013,7 @@ const App = () => {
                         <button
                           onClick={() => handleChecklistChange(index, 'foto', !item.foto)}
                           style={{
-                            padding: '8px',
+                            padding: isMobile ? '10px' : '8px',
                             borderRadius: '4px',
                             border: 'none',
                             cursor: 'pointer',
@@ -2134,13 +1033,15 @@ const App = () => {
                         onChange={(e) => handleChecklistChange(index, 'observacao', e.target.value)}
                         style={{
                           width: '100%',
-                          padding: '8px',
-                          fontSize: '14px',
+                          padding: isMobile ? '12px' : '8px',
+                          fontSize: isMobile ? '16px' : '14px',
                           border: '1px solid #d1d5db',
                           borderRadius: '4px',
                           resize: 'none',
                           rows: 2,
-                          boxSizing: 'border-box'
+                          boxSizing: 'border-box',
+                          WebkitAppearance: 'none',
+                          appearance: 'none'
                         }}
                         rows="2"
                       />
@@ -2156,9 +1057,9 @@ const App = () => {
               disabled={!podeIniciarViagem()}
               style={{
                 width: '100%',
-                padding: '16px',
+                padding: isMobile ? '18px 16px' : '16px',
                 borderRadius: '8px',
-                fontSize: '16px',
+                fontSize: isMobile ? '18px' : '16px',
                 fontWeight: '600',
                 color: 'white',
                 border: 'none',
@@ -2167,10 +1068,12 @@ const App = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                WebkitAppearance: 'none',
+                appearance: 'none'
               }}
             >
-              <Play size={24} />
+              <Play size={isMobile ? 20 : 24} />
               <span>Iniciar Viagem</span>
             </button>
           </div>
@@ -2186,21 +1089,21 @@ const App = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '16px'
+          padding: isMobile ? '10px' : '16px'
         }}>
           <div style={{
-            maxWidth: '500px',
+            maxWidth: isMobile ? '95%' : '500px',
             margin: '0 auto',
             backgroundColor: 'white',
             borderRadius: '12px',
             boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-            padding: '40px',
+            padding: isMobile ? '30px 20px' : '40px',
             textAlign: 'center'
           }}>
             <div style={{ marginBottom: '32px' }}>
               <div style={{
-                width: '80px',
-                height: '80px',
+                width: isMobile ? '60px' : '80px',
+                height: isMobile ? '60px' : '80px',
                 backgroundColor: '#16a34a',
                 borderRadius: '50%',
                 display: 'flex',
@@ -2208,20 +1111,20 @@ const App = () => {
                 justifyContent: 'center',
                 margin: '0 auto 16px auto'
               }}>
-                <Play style={{ color: 'white' }} size={40} />
+                <Play style={{ color: 'white' }} size={isMobile ? 30 : 40} />
               </div>
               <h2 style={{ 
-                fontSize: '32px', 
+                fontSize: isMobile ? '24px' : '32px', 
                 fontWeight: 'bold', 
                 color: '#16a34a',
                 margin: '0 0 8px 0'
               }}>
                 Boa Viagem!
               </h2>
-              <p style={{ color: '#6b7280', marginBottom: '4px' }}>
+              <p style={{ color: '#6b7280', marginBottom: '4px', fontSize: isMobile ? '14px' : '16px' }}>
                 Viagem de {dadosViagem.origem} para {dadosViagem.destino}
               </p>
-              <p style={{ fontSize: '14px', color: '#9ca3af' }}>
+              <p style={{ fontSize: isMobile ? '12px' : '14px', color: '#9ca3af' }}>
                 Ônibus: {dadosViagem.prefixo} | Motorista: {dadosViagem.motorista}
               </p>
             </div>
@@ -2232,19 +1135,21 @@ const App = () => {
                 width: '100%',
                 backgroundColor: '#dc2626',
                 color: 'white',
-                padding: '16px',
+                padding: isMobile ? '18px 16px' : '16px',
                 borderRadius: '8px',
-                fontSize: '16px',
+                fontSize: isMobile ? '18px' : '16px',
                 fontWeight: '600',
                 border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                WebkitAppearance: 'none',
+                appearance: 'none'
               }}
             >
-              <Square size={24} />
+              <Square size={isMobile ? 20 : 24} />
               <span>Finalizar Viagem</span>
             </button>
           </div>
@@ -2261,18 +1166,18 @@ const App = () => {
         <div style={{ 
           minHeight: '100vh', 
           background: 'linear-gradient(135deg, #fed7aa 0%, #fef3c7 100%)',
-          padding: '16px'
+          padding: isMobile ? '10px' : '16px'
         }}>
           <div style={{
-            maxWidth: '500px',
+            maxWidth: isMobile ? '95%' : '500px',
             margin: '0 auto',
             backgroundColor: 'white',
             borderRadius: '12px',
             boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-            padding: '32px'
+            padding: isMobile ? '20px' : '32px'
           }}>
             <h2 style={{ 
-              fontSize: '24px', 
+              fontSize: isMobile ? '20px' : '24px', 
               fontWeight: 'bold', 
               color: '#ea580c',
               marginBottom: '24px',
@@ -2293,17 +1198,14 @@ const App = () => {
               </label>
               <input
                 type="number"
+                inputMode="numeric"
                 value={dadosViagem.kmFinal}
                 onChange={(e) => handleInputChange('kmFinal', e.target.value)}
                 placeholder="Quilometragem final"
                 style={{
-                  width: '100%',
-                  padding: '12px',
+                  ...mobileStyles.input,
                   border: kmInvalido ? '1px solid #dc2626' : '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  backgroundColor: kmInvalido ? '#fef2f2' : 'white',
-                  boxSizing: 'border-box'
+                  backgroundColor: kmInvalido ? '#fef2f2' : 'white'
                 }}
               />
               {kmInvalido && (
@@ -2343,14 +1245,9 @@ const App = () => {
                 onChange={(e) => handleInputChange('diversidades', e.target.value)}
                 placeholder="Descreva qualquer ocorrência durante a viagem..."
                 style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  height: '80px',
-                  resize: 'none',
-                  boxSizing: 'border-box'
+                  ...mobileStyles.input,
+                  height: isMobile ? '100px' : '80px',
+                  resize: 'none'
                 }}
               />
             </div>
@@ -2374,26 +1271,21 @@ const App = () => {
                 onChange={(e) => handleInputChange('ordemServico', e.target.value)}
                 placeholder="Serviços necessários no veículo..."
                 style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  height: '80px',
-                  resize: 'none',
-                  boxSizing: 'border-box'
+                  ...mobileStyles.input,
+                  height: isMobile ? '100px' : '80px',
+                  resize: 'none'
                 }}
               />
             </div>
 
             <div style={{ 
               backgroundColor: '#f9fafb', 
-              padding: '16px', 
+              padding: isMobile ? '12px' : '16px', 
               borderRadius: '8px',
               marginBottom: '24px'
             }}>
-              <h4 style={{ fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Resumo da Viagem:</h4>
-              <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+              <h4 style={{ fontWeight: '600', color: '#374151', marginBottom: '8px', fontSize: isMobile ? '14px' : '16px' }}>Resumo da Viagem:</h4>
+              <div style={{ fontSize: isMobile ? '13px' : '14px', lineHeight: '1.6' }}>
                 <p style={{ margin: '4px 0' }}><strong>Motorista:</strong> {dadosViagem.motorista}</p>
                 <p style={{ margin: '4px 0' }}><strong>Rota:</strong> {dadosViagem.origem} → {dadosViagem.destino}</p>
                 <p style={{ margin: '4px 0' }}><strong>Ônibus:</strong> {dadosViagem.prefixo}</p>
@@ -2409,14 +1301,16 @@ const App = () => {
               disabled={kmInvalido || !dadosViagem.kmFinal}
               style={{
                 width: '100%',
-                padding: '16px',
+                padding: isMobile ? '18px 16px' : '16px',
                 borderRadius: '8px',
-                fontSize: '16px',
+                fontSize: isMobile ? '18px' : '16px',
                 fontWeight: '600',
                 color: 'white',
                 border: 'none',
                 cursor: (kmInvalido || !dadosViagem.kmFinal) ? 'not-allowed' : 'pointer',
-                backgroundColor: (kmInvalido || !dadosViagem.kmFinal) ? '#9ca3af' : '#2563eb'
+                backgroundColor: (kmInvalido || !dadosViagem.kmFinal) ? '#9ca3af' : '#2563eb',
+                WebkitAppearance: 'none',
+                appearance: 'none'
               }}
             >
               {kmInvalido ? 'Corrija o KM Final' : 'Concluir Viagem'}
@@ -2427,15 +1321,30 @@ const App = () => {
     }
 
     if (etapa === 'concluida') {
+      const itensNaoConformes = checklist.filter(item => item.status === 'nao-conforme');
+      const temProblemasGraves = itensNaoConformes.length > 0 || dadosViagem.ordemServico.trim() !== '';
+      
       return (
         <div style={{ 
           minHeight: '100vh', 
           background: 'linear-gradient(135deg, #bfdbfe 0%, #dbeafe 100%)',
-          padding: '16px'
+          padding: isMobile ? '10px' : '16px'
         }}>
-          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e3a8a' }}>
-              Sistema de Controle de Viagem
+          <header style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}>
+            <h1 style={{ 
+              fontSize: isMobile ? '18px' : '24px', 
+              fontWeight: 'bold', 
+              color: '#1e3a8a',
+              margin: 0
+            }}>
+              {isMobile ? 'Controle de Viagem' : 'Sistema de Controle de Viagem'}
             </h1>
             <button
               onClick={logout}
@@ -2447,56 +1356,103 @@ const App = () => {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                fontSize: '16px'
+                fontSize: isMobile ? '14px' : '16px',
+                padding: isMobile ? '8px' : '0'
               }}
             >
-              <LogOut size={20} />
+              <LogOut size={isMobile ? 18 : 20} />
               <span>Sair</span>
             </button>
           </header>
           
           <div style={{
-            maxWidth: '500px',
+            maxWidth: isMobile ? '95%' : '500px',
             margin: '0 auto',
             backgroundColor: 'white',
             borderRadius: '12px',
             boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-            padding: '40px',
+            padding: isMobile ? '30px 20px' : '40px',
             textAlign: 'center'
           }}>
             <div style={{
-              width: '80px',
-              height: '80px',
-              backgroundColor: '#2563eb',
+              width: isMobile ? '60px' : '80px',
+              height: isMobile ? '60px' : '80px',
+              backgroundColor: temProblemasGraves ? '#f59e0b' : '#2563eb',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 16px auto'
             }}>
-              <CheckCircle style={{ color: 'white' }} size={40} />
+              {temProblemasGraves ? (
+                <AlertTriangle style={{ color: 'white' }} size={isMobile ? 30 : 40} />
+              ) : (
+                <CheckCircle style={{ color: 'white' }} size={isMobile ? 30 : 40} />
+              )}
             </div>
             <h2 style={{ 
-              fontSize: '24px', 
+              fontSize: isMobile ? '20px' : '24px', 
               fontWeight: 'bold', 
-              color: '#2563eb',
+              color: temProblemasGraves ? '#f59e0b' : '#2563eb',
               marginBottom: '16px'
             }}>
               Viagem Concluída!
             </h2>
-            <p style={{ color: '#6b7280', marginBottom: '24px' }}>
-              Todos os dados foram salvos com sucesso.
-            </p>
+            
+            {temProblemasGraves ? (
+              <div style={{
+                backgroundColor: '#fffbeb',
+                border: '1px solid #fed7aa',
+                borderRadius: '8px',
+                padding: isMobile ? '12px' : '16px',
+                marginBottom: '24px',
+                textAlign: 'left'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                  <Wrench style={{ color: '#f59e0b', marginRight: '8px' }} size={20} />
+                  <strong style={{ color: '#92400e', fontSize: isMobile ? '14px' : '16px' }}>Veículo Enviado para Manutenção</strong>
+                </div>
+                <p style={{ color: '#92400e', fontSize: isMobile ? '13px' : '14px', margin: '0 0 8px 0' }}>
+                  Foram detectados problemas que necessitam atenção:
+                </p>
+                <ul style={{ color: '#92400e', fontSize: isMobile ? '12px' : '13px', margin: '0', paddingLeft: '20px' }}>
+                  {itensNaoConformes.map((item, idx) => (
+                    <li key={idx} style={{ marginBottom: '4px' }}>
+                      <strong>{item.item}:</strong> {item.observacao || 'Não conforme'}
+                    </li>
+                  ))}
+                  {dadosViagem.ordemServico.trim() && (
+                    <li style={{ marginBottom: '4px' }}>
+                      <strong>OS Manual:</strong> {dadosViagem.ordemServico.substring(0, 50)}...
+                    </li>
+                  )}
+                </ul>
+                <div style={{ 
+                  marginTop: '12px', 
+                  padding: '8px', 
+                  backgroundColor: '#fef3c7', 
+                  borderRadius: '4px',
+                  fontSize: isMobile ? '11px' : '12px',
+                  color: '#92400e'
+                }}>
+                  🔧 O veículo {dadosViagem.prefixo} foi automaticamente colocado em manutenção e não estará disponível até a liberação.
+                </div>
+              </div>
+            ) : (
+              <p style={{ color: '#6b7280', marginBottom: '24px', fontSize: isMobile ? '14px' : '16px' }}>
+                Todos os dados foram salvos com sucesso. Nenhum problema detectado!
+              </p>
+            )}
             
             <div style={{ 
               backgroundColor: '#f9fafb', 
-              padding: '16px', 
+              padding: isMobile ? '12px' : '16px', 
               borderRadius: '8px',
               marginBottom: '24px',
               textAlign: 'left'
             }}>
-              <h4 style={{ fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Relatório Final:</h4>
-              <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+              <h4 style={{ fontWeight: '600', color: '#374151', marginBottom: '8px', fontSize: isMobile ? '14px' : '16px' }}>Relatório Final:</h4>
+              <div style={{ fontSize: isMobile ? '13px' : '14px', lineHeight: '1.6' }}>
                 <p style={{ margin: '4px 0' }}><strong>Motorista:</strong> {dadosViagem.motorista}</p>
                 <p style={{ margin: '4px 0' }}><strong>Rota:</strong> {dadosViagem.origem} → {dadosViagem.destino}</p>
                 <p style={{ margin: '4px 0' }}><strong>Ônibus:</strong> {dadosViagem.prefixo}</p>
@@ -2507,29 +1463,6 @@ const App = () => {
                 {dadosViagem.ordemServico && (
                   <p style={{ margin: '4px 0' }}><strong>Ordem de Serviço:</strong> {dadosViagem.ordemServico}</p>
                 )}
-                
-                {/* Mostrar itens não conformes */}
-                {checklist.filter(item => item.status === 'nao-conforme').length > 0 && (
-                  <div style={{ 
-                    marginTop: '12px', 
-                    padding: '12px', 
-                    backgroundColor: '#fffbeb', 
-                    border: '1px solid #fed7aa', 
-                    borderRadius: '6px' 
-                  }}>
-                    <p style={{ margin: '0 0 6px 0', fontWeight: '600', color: '#92400e' }}>
-                      ⚠️ Itens com Problemas Detectados:
-                    </p>
-                    {checklist.filter(item => item.status === 'nao-conforme').map((item, idx) => (
-                      <p key={idx} style={{ margin: '2px 0', fontSize: '13px', color: '#92400e' }}>
-                        • <strong>{item.item}:</strong> {item.observacao}
-                      </p>
-                    ))}
-                    <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#92400e', fontStyle: 'italic' }}>
-                      O veículo foi automaticamente colocado em manutenção.
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -2539,12 +1472,14 @@ const App = () => {
                 width: '100%',
                 backgroundColor: '#16a34a',
                 color: 'white',
-                padding: '16px',
+                padding: isMobile ? '18px 16px' : '16px',
                 borderRadius: '8px',
-                fontSize: '16px',
+                fontSize: isMobile ? '18px' : '16px',
                 fontWeight: '600',
                 border: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                WebkitAppearance: 'none',
+                appearance: 'none'
               }}
             >
               Nova Viagem
@@ -2555,53 +1490,40 @@ const App = () => {
     }
   }
 
-  // TELA DE DETALHES DA VIAGEM
-  if (tela === 'detalhes-viagem') {
+  // Dashboards simplificados para outras telas (admin, manutenção, gerência)
+  if (tela === 'dashboard-admin' || tela === 'dashboard-manutencao' || tela === 'dashboard-gerencia') {
+    const motoristas = usuarios.filter(u => u.tipo === 'motorista');
+    const viagensComProblemas = viagens.filter(v => v.temProblemas).length;
+    const veiculosManutencao = veiculos.filter(v => v.status === 'manutencao').length;
+    const totalKm = viagens.reduce((total, viagem) => total + viagem.kmPercorridos, 0);
+    
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
         <header style={{ 
           backgroundColor: 'white', 
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          padding: '16px 0'
+          padding: isMobile ? '12px 0' : '16px 0'
         }}>
           <div style={{ 
             maxWidth: '1200px', 
             margin: '0 auto', 
-            padding: '0 24px',
+            padding: isMobile ? '0 16px' : '0 24px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center'
           }}>
+            <h1 style={{ 
+              fontSize: isMobile ? '18px' : '24px', 
+              fontWeight: 'bold', 
+              color: '#1f2937',
+              margin: 0
+            }}>
+              {tela === 'dashboard-admin' && 'Painel Admin'}
+              {tela === 'dashboard-manutencao' && 'Painel Manutenção'}
+              {tela === 'dashboard-gerencia' && 'Painel Gerencial'}
+            </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <button
-                onClick={() => {
-                  if (tipoUsuario === 'admin') {
-                    setTela('dashboard-admin');
-                  } else if (tipoUsuario === 'gerencia') {
-                    setTela('dashboard-gerencia');
-                  }
-                  setViagemDetalhada(null);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  color: '#6b7280',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '16px'
-                }}
-              >
-                <ArrowLeft size={20} />
-                <span>Voltar</span>
-              </button>
-              <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
-                Detalhes da Viagem
-              </h1>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ color: '#6b7280' }}>Olá, {usuarioLogado}</span>
+              <span style={{ color: '#6b7280', fontSize: isMobile ? '14px' : '16px' }}>Olá, {usuarioLogado}</span>
               <button
                 onClick={logout}
                 style={{
@@ -2612,270 +1534,223 @@ const App = () => {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  fontSize: '16px'
+                  fontSize: isMobile ? '14px' : '16px'
                 }}
               >
-                <LogOut size={20} />
+                <LogOut size={isMobile ? 18 : 20} />
                 <span>Sair</span>
               </button>
             </div>
           </div>
         </header>
 
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '24px' }}>
-          {viagemDetalhada && (
+        <div style={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto', 
+          padding: isMobile ? '16px' : '24px' 
+        }}>
+          {/* Cards de estatísticas */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: isMobile ? '12px' : '24px',
+            marginBottom: '32px'
+          }}>
             <div style={{ 
               backgroundColor: 'white', 
-              borderRadius: '12px', 
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)', 
-              overflow: 'hidden'
+              padding: isMobile ? '16px' : '24px', 
+              borderRadius: '8px', 
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
             }}>
-              {/* Cabeçalho da viagem */}
-              <div style={{ 
-                backgroundColor: viagemDetalhada.temProblemas ? '#fee2e2' : '#f0f9ff',
-                padding: '24px',
-                borderBottom: '1px solid #e5e7eb'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <h2 style={{ 
-                    fontSize: '24px', 
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <Users style={{ 
+                  color: '#2563eb', 
+                  marginRight: isMobile ? '8px' : '12px' 
+                }} size={isMobile ? 24 : 32} />
+                <div>
+                  <h3 style={{ 
+                    fontSize: isMobile ? '14px' : '18px', 
+                    fontWeight: '600', 
+                    margin: 0 
+                  }}>Motoristas</h3>
+                  <p style={{ 
+                    fontSize: isMobile ? '18px' : '24px', 
                     fontWeight: 'bold', 
-                    color: viagemDetalhada.temProblemas ? '#991b1b' : '#0369a1',
-                    margin: 0
+                    color: '#2563eb', 
+                    margin: '4px 0 0 0' 
                   }}>
-                    Viagem #{viagemDetalhada.id}
-                  </h2>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px',
-                    backgroundColor: viagemDetalhada.temProblemas ? '#dc2626' : '#059669',
-                    color: 'white',
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}>
-                    {viagemDetalhada.temProblemas ? (
-                      <>
-                        <AlertTriangle size={16} />
-                        <span>Com Ocorrências</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle size={16} />
-                        <span>Concluída</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                  <div>
-                    <span style={{ fontSize: '14px', color: '#6b7280', display: 'block' }}>Data e Hora</span>
-                    <span style={{ fontSize: '16px', fontWeight: '500' }}>{viagemDetalhada.dataHora}</span>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '14px', color: '#6b7280', display: 'block' }}>Motorista</span>
-                    <span style={{ fontSize: '16px', fontWeight: '500' }}>{viagemDetalhada.motorista}</span>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '14px', color: '#6b7280', display: 'block' }}>Veículo</span>
-                    <span style={{ fontSize: '16px', fontWeight: '500' }}>{viagemDetalhada.prefixo}</span>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '14px', color: '#6b7280', display: 'block' }}>KM Percorridos</span>
-                    <span style={{ fontSize: '16px', fontWeight: '500' }}>{viagemDetalhada.kmPercorridos} km</span>
-                  </div>
+                    {motoristas.length}
+                  </p>
                 </div>
               </div>
-
-              {/* Informações da rota */}
-              <div style={{ padding: '24px', borderBottom: '1px solid #e5e7eb' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#374151', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-                  <MapPin style={{ marginRight: '8px' }} size={20} />
-                  Informações da Rota
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ 
-                    padding: '16px', 
-                    backgroundColor: '#f9fafb', 
-                    borderRadius: '8px',
-                    textAlign: 'center'
+            </div>
+            
+            <div style={{ 
+              backgroundColor: 'white', 
+              padding: isMobile ? '16px' : '24px', 
+              borderRadius: '8px', 
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <Truck style={{ 
+                  color: '#059669', 
+                  marginRight: isMobile ? '8px' : '12px' 
+                }} size={isMobile ? 24 : 32} />
+                <div>
+                  <h3 style={{ 
+                    fontSize: isMobile ? '14px' : '18px', 
+                    fontWeight: '600', 
+                    margin: 0 
+                  }}>Veículos</h3>
+                  <p style={{ 
+                    fontSize: isMobile ? '18px' : '24px', 
+                    fontWeight: 'bold', 
+                    color: '#059669', 
+                    margin: '4px 0 0 0' 
                   }}>
-                    <span style={{ fontSize: '14px', color: '#6b7280', display: 'block' }}>Origem</span>
-                    <span style={{ fontSize: '16px', fontWeight: '500' }}>{viagemDetalhada.origem}</span>
-                  </div>
-                  <div style={{ color: '#6b7280' }}>→</div>
-                  <div style={{ 
-                    padding: '16px', 
-                    backgroundColor: '#f9fafb', 
-                    borderRadius: '8px',
-                    textAlign: 'center'
-                  }}>
-                    <span style={{ fontSize: '14px', color: '#6b7280', display: 'block' }}>Destino</span>
-                    <span style={{ fontSize: '16px', fontWeight: '500' }}>{viagemDetalhada.destino}</span>
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
-                  <div style={{ 
-                    padding: '16px', 
-                    backgroundColor: '#f9fafb', 
-                    borderRadius: '8px'
-                  }}>
-                    <span style={{ fontSize: '14px', color: '#6b7280', display: 'block' }}>KM Inicial</span>
-                    <span style={{ fontSize: '16px', fontWeight: '500' }}>{viagemDetalhada.kmInicial}</span>
-                  </div>
-                  <div style={{ 
-                    padding: '16px', 
-                    backgroundColor: '#f9fafb', 
-                    borderRadius: '8px'
-                  }}>
-                    <span style={{ fontSize: '14px', color: '#6b7280', display: 'block' }}>KM Final</span>
-                    <span style={{ fontSize: '16px', fontWeight: '500' }}>{viagemDetalhada.kmFinal}</span>
-                  </div>
+                    {veiculos.length}
+                  </p>
+                  {veiculosManutencao > 0 && (
+                    <p style={{ fontSize: '10px', color: '#dc2626', margin: '2px 0 0 0' }}>
+                      {veiculosManutencao} em manutenção
+                    </p>
+                  )}
                 </div>
               </div>
+            </div>
+            
+            <div style={{ 
+              backgroundColor: 'white', 
+              padding: isMobile ? '16px' : '24px', 
+              borderRadius: '8px', 
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <FileText style={{ 
+                  color: '#ea580c', 
+                  marginRight: isMobile ? '8px' : '12px' 
+                }} size={isMobile ? 24 : 32} />
+                <div>
+                  <h3 style={{ 
+                    fontSize: isMobile ? '14px' : '18px', 
+                    fontWeight: '600', 
+                    margin: 0 
+                  }}>Viagens</h3>
+                  <p style={{ 
+                    fontSize: isMobile ? '18px' : '24px', 
+                    fontWeight: 'bold', 
+                    color: '#ea580c', 
+                    margin: '4px 0 0 0' 
+                  }}>
+                    {viagens.length}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-              {/* Checklist */}
-              <div style={{ padding: '24px', borderBottom: '1px solid #e5e7eb' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#374151', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-                  <Settings style={{ marginRight: '8px' }} size={20} />
-                  Checklist de Verificação
-                </h3>
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  {viagemDetalhada.checklist.map((item, index) => (
-                    <div key={index} style={{ 
-                      padding: '16px', 
-                      backgroundColor: item.status === 'nao-conforme' ? '#fef2f2' : '#f0f9ff',
-                      borderRadius: '8px',
-                      border: item.status === 'nao-conforme' ? '1px solid #fecaca' : '1px solid #bae6fd'
+            <div style={{ 
+              backgroundColor: 'white', 
+              padding: isMobile ? '16px' : '24px', 
+              borderRadius: '8px', 
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <AlertTriangle style={{ 
+                  color: '#dc2626', 
+                  marginRight: isMobile ? '8px' : '12px' 
+                }} size={isMobile ? 24 : 32} />
+                <div>
+                  <h3 style={{ 
+                    fontSize: isMobile ? '14px' : '18px', 
+                    fontWeight: '600', 
+                    margin: 0 
+                  }}>Ocorrências</h3>
+                  <p style={{ 
+                    fontSize: isMobile ? '18px' : '24px', 
+                    fontWeight: 'bold', 
+                    color: '#dc2626', 
+                    margin: '4px 0 0 0' 
+                  }}>
+                    {viagensComProblemas}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista simplificada de viagens */}
+          {viagens.length > 0 && (
+            <div style={{ 
+              backgroundColor: 'white', 
+              borderRadius: '8px', 
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+              padding: isMobile ? '16px' : '24px'
+            }}>
+              <h2 style={{ 
+                fontSize: isMobile ? '16px' : '20px', 
+                fontWeight: 'bold', 
+                marginBottom: '16px', 
+                display: 'flex', 
+                alignItems: 'center' 
+              }}>
+                <FileText style={{ marginRight: '8px' }} size={isMobile ? 18 : 24} />
+                Últimas Viagens
+              </h2>
+              
+              <div style={{ 
+                display: 'grid', 
+                gap: isMobile ? '8px' : '12px',
+                maxHeight: '400px',
+                overflowY: 'auto'
+              }}>
+                {viagens.slice(-5).reverse().map(viagem => (
+                  <div key={viagem.id} style={{ 
+                    padding: isMobile ? '12px' : '16px', 
+                    backgroundColor: viagem.temProblemas ? '#fef2f2' : '#f9fafb', 
+                    borderRadius: '8px',
+                    border: viagem.temProblemas ? '1px solid #fecaca' : '1px solid #e5e7eb'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'flex-start',
+                      marginBottom: '8px',
+                      flexWrap: 'wrap',
+                      gap: '8px'
                     }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontWeight: '500' }}>{item.item}</span>
-                          {item.obrigatorio && (
-                            <span style={{
-                              backgroundColor: '#fef2f2',
-                              color: '#991b1b',
-                              padding: '2px 8px',
-                              borderRadius: '12px',
-                              fontSize: '12px'
-                            }}>
-                              Obrigatório
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{
-                            padding: '4px 12px',
-                            borderRadius: '16px',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            backgroundColor: item.status === 'conforme' ? '#dcfce7' : '#fef2f2',
-                            color: item.status === 'conforme' ? '#166534' : '#991b1b'
+                      <strong style={{ fontSize: isMobile ? '14px' : '16px' }}>{viagem.motorista}</strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: isMobile ? '11px' : '12px', color: '#6b7280' }}>{viagem.dataHora}</span>
+                        {viagem.temProblemas && (
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            color: '#dc2626',
+                            fontSize: isMobile ? '11px' : '12px'
                           }}>
-                            {item.status === 'conforme' ? 'Conforme' : 'Não Conforme'}
-                          </span>
-                          {item.foto && (
-                            <div style={{
-                              padding: '4px',
-                              backgroundColor: '#dbeafe',
-                              borderRadius: '4px',
-                              color: '#1e40af'
-                            }}>
-                              <Camera size={16} />
-                            </div>
-                          )}
-                        </div>
+                            <AlertTriangle size={12} style={{ marginRight: '2px' }} />
+                            <span>Problemas</span>
+                          </div>
+                        )}
                       </div>
-                      {item.observacao && (
-                        <div style={{ 
-                          marginTop: '8px',
-                          padding: '8px',
-                          backgroundColor: '#fee2e2',
-                          borderRadius: '4px',
-                          borderLeft: '4px solid #dc2626'
-                        }}>
-                          <span style={{ fontSize: '14px', color: '#991b1b' }}>
-                            <strong>Observação:</strong> {item.observacao}
-                          </span>
-                        </div>
-                      )}
                     </div>
-                  ))}
-                </div>
+                    <p style={{ 
+                      margin: '4px 0', 
+                      fontSize: isMobile ? '13px' : '14px',
+                      color: '#6b7280'
+                    }}>
+                      <strong>Rota:</strong> {viagem.origem} → {viagem.destino}
+                    </p>
+                    <p style={{ 
+                      margin: '4px 0', 
+                      fontSize: isMobile ? '13px' : '14px',
+                      color: '#6b7280'
+                    }}>
+                      <strong>Veículo:</strong> {viagem.prefixo} | <strong>KM:</strong> {viagem.kmPercorridos} km
+                    </p>
+                  </div>
+                ))}
               </div>
-
-              {/* Diversidades e OS */}
-              {(viagemDetalhada.diversidades || viagemDetalhada.ordemServico) && (
-                <div style={{ padding: '24px' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#374151', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-                    <AlertTriangle style={{ marginRight: '8px' }} size={20} />
-                    Ocorrências e Serviços
-                  </h3>
-                  
-                  {viagemDetalhada.diversidades && (
-                    <div style={{ 
-                      marginBottom: '16px',
-                      padding: '16px',
-                      backgroundColor: '#fffbeb',
-                      borderRadius: '8px',
-                      border: '1px solid #fed7aa'
-                    }}>
-                      <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#92400e', marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
-                        <FileText style={{ marginRight: '6px' }} size={16} />
-                        Diversidades da Viagem
-                      </h4>
-                      <p style={{ fontSize: '14px', color: '#92400e', margin: 0, lineHeight: '1.5' }}>
-                        {viagemDetalhada.diversidades}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {viagemDetalhada.ordemServico && (
-                    <div style={{ 
-                      padding: '16px',
-                      backgroundColor: '#fef2f2',
-                      borderRadius: '8px',
-                      border: '1px solid #fecaca'
-                    }}>
-                      <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#991b1b', marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
-                        <Wrench style={{ marginRight: '6px' }} size={16} />
-                        Ordem de Serviço
-                      </h4>
-                      <p style={{ fontSize: '14px', color: '#991b1b', margin: 0, lineHeight: '1.5' }}>
-                        {viagemDetalhada.ordemServico}
-                      </p>
-                      {tipoUsuario === 'manutencao' && (
-                        <div style={{ marginTop: '12px' }}>
-                          <button
-                            onClick={() => {
-                              // Simular liberação do veículo após manutenção
-                              alert('Ordem de serviço processada! Veículo liberado para uso.');
-                            }}
-                            style={{
-                              backgroundColor: '#059669',
-                              color: 'white',
-                              padding: '8px 16px',
-                              border: 'none',
-                              borderRadius: '4px',
-                              fontSize: '14px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                          >
-                            <CheckCircle size={16} />
-                            Processar OS
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>
