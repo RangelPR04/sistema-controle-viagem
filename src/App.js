@@ -623,15 +623,12 @@ const App = () => {
           </button>
           
           <div style={{ 
-            fontSize: isMobile ? '11px' : '12px', 
+            fontSize: isMobile ? '12px' : '14px', 
             color: '#6b7280', 
             textAlign: 'center',
-            lineHeight: '1.4'
+            marginTop: '10px'
           }}>
-            <p style={{ margin: '3px 0' }}><strong>Admin:</strong> admin / admin123</p>
-            <p style={{ margin: '3px 0' }}><strong>Motorista:</strong> João Silva / 123456</p>
-            <p style={{ margin: '3px 0' }}><strong>Manutenção:</strong> Carlos Manutenção / manut123</p>
-            <p style={{ margin: '3px 0' }}><strong>Gerência:</strong> Ana Gerente / gerente123</p>
+            <p style={{ margin: 0 }}>Entre com suas credenciais para acessar o sistema</p>
           </div>
         </div>
       </div>
