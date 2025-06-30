@@ -6,11 +6,16 @@
     <title>RTdigital - Gestão de Frota</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="description" content="Sistema completo de gestão de frota">
+    <meta name="description" content="Sistema completo de gestão de frota com diferentes perfis de usuário">
     <meta name="theme-color" content="#2196f3">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="RTdigital">
+    <meta name="msapplication-TileColor" content="#2196f3">
+    
+    <!-- PWA Links -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlJUZGlnaXRhbCAtIEdlc3TDo28gZGUgRnJvdGEiLAogICJzaG9ydF9uYW1lIjogIlJUZGlnaXRhbCIsCiAgImRlc2NyaXB0aW9uIjogIlNpc3RlbWEgY29tcGxldG8gZGUgZ2VzdMOjbyBkZSBmcm90YSBjb20gZGlmZXJlbnRlcyBwZXJmaXMgZGUgdXN1w6FyaW8iLAogICJzdGFydF91cmwiOiAiLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2ZmZmZmZiIsCiAgInRoZW1lX2NvbG9yIjogIiMyMTk2ZjMiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjNhV1IwYUQwaU1qUXdJaUJvWldsbmFIUTlJakkwTUNJZ2RtbGxkMEp2ZUQwaU1DQXdJakkwTUNBeU5EQWlJR1pwYkd3OUlpTXlNVGsyWmpNaVBnbzhjbVZqZENCM2FXUjBhRDBpTWpRd0lpQm9aV2xuYUhROUlqSTBNQ0lnWm1sc2JEMGlJekl4T1RabU15SXZQZ2c4ZEdWNGRDQjRQU0l4TWpBaUlIazlJalE0SWlCbWIyNTBMWE5wZW1VOUlqUXdJaUJtYVd4c1BTSWpabVptSWlCbWIyNTBMWGRsYVdkb2REMGlZbTlzWkNJK1VsUmtKejR2ZEdWNGRENDhMM04yWno0PSIsCiAgICAgICJzaXplcyI6ICIyNDB4MjQwIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCM2FXUjBhRDBpTlRFeUlpQm9aV2xuYUhROUlqVXhNaUlnZG1sbGQwSnZlRDBpTUNBd0lEVXhNaUExTVRJaUlHWnBiR3c5SWlNeU1UazJaak1pUGdnOGNtVmpkQ0IzYVdSMGFEMGlOVEV5SWlCb1pXbG5hSFE5SWpVeE1pSWdabWxzYkQwaUl6SXhPVFptTXlJdlBnZzhkR1Y0ZENCNFBTSTJOQ0lnZVQwaU1UQXpJaUJtYjI1MExYTnBlbVU5SWpVNElpQm1hV3hzUFNJalptWm1JaUJtYjI1MExYZGxhV2RvZEQwaVltOXNaQ0krVWxSa1p6NHZkR1Y0ZEQ0OEwzTjJaejQ9IiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0sCiAgImNhdGVnb3JpZXMiOiBbImJ1c2luZXNzIiwgInByb2R1Y3Rpdml0eSIsICJ1dGlsaXRpZXMiXQp9">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgdmlld0JveD0iMCAwIDI0MCAyNDAiIGZpbGw9IiMyMTk2ZjMiPgo8cmVjdCB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgZmlsbD0iIzIxOTZmMyIvPgo8dGV4dCB4PSIxMjAiIHk9IjQ4IiBmb250LXNpemU9IjQwIiBmaWxsPSIjZmZmIiBmb250LXdlaWdodD0iYm9sZCI+UlRkZzwvdGV4dD48L3N2Zz4=">
     
     <style>
         * {
@@ -121,6 +126,11 @@
             background: #1976d2;
         }
 
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
         .btn-outline {
             background: transparent;
             color: #2196f3;
@@ -140,6 +150,11 @@
         .btn-warning {
             background: #ffc107;
             color: #212529;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
         }
 
         .stats-grid {
@@ -215,7 +230,7 @@
             background: rgba(255,255,255,0.2);
         }
 
-        .vehicle-item, .user-item {
+        .vehicle-item, .user-item, .trip-item {
             background: white;
             padding: 15px;
             border-radius: 8px;
@@ -325,6 +340,11 @@
             color: #721c24;
         }
 
+        .badge-primary {
+            background: #cce7ff;
+            color: #004085;
+        }
+
         .step-indicator {
             display: flex;
             justify-content: center;
@@ -354,6 +374,7 @@
             color: white;
         }
 
+        /* PWA specific styles */
         .install-prompt {
             position: fixed;
             bottom: 20px;
@@ -366,6 +387,12 @@
             text-align: center;
             z-index: 1001;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .offline-indicator {
@@ -389,17 +416,55 @@
             height: 12px;
             border-radius: 50%;
             background: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+
+        @media (display-mode: standalone) {
+            .pwa-status {
+                background: #2196f3;
+                box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+            }
+            
+            @keyframes pulse {
+                0% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.7); }
+                70% { box-shadow: 0 0 0 10px rgba(33, 150, 243, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0); }
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .card {
+                background: #2d3748;
+                color: white;
+            }
+            
+            .input-group input, .input-group select, .input-group textarea {
+                background: #4a5568;
+                color: white;
+                border-color: #4a5568;
+            }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
+        <!-- PWA Status Indicator -->
         <div class="pwa-status" title="RTdigital PWA Ativo"></div>
         
+        <!-- Offline Indicator -->
         <div id="offlineIndicator" class="offline-indicator hidden">
             📴 Modo Offline - Dados salvos localmente
         </div>
 
+        <!-- Install Prompt -->
         <div id="installPrompt" class="install-prompt hidden">
             <div style="margin-bottom: 10px;">📱 Instalar RTdigital como aplicativo?</div>
             <button class="btn btn-success" onclick="installPWA()" style="margin: 5px; width: auto; padding: 8px 16px;">Instalar</button>
@@ -429,11 +494,12 @@
                 </div>
             </div>
 
-            <div class="alert alert-info">
+            <div id="connectionStatus" class="alert alert-info">
                 🌐 RTdigital PWA carregado - Funciona offline!
             </div>
         </div>
 
+        <!-- Admin Home Screen -->
         <div id="adminHomeScreen" class="screen hidden">
             <div class="header">
                 <div style="font-size: 24px; font-weight: bold;">Olá, <span id="userName"></span></div>
@@ -464,6 +530,7 @@
             <button class="btn btn-outline" onclick="logout()">Sair</button>
         </div>
 
+        <!-- User Management Screen -->
         <div id="userManagementScreen" class="screen hidden">
             <div class="header">
                 <div style="font-size: 20px; font-weight: bold;">Gerenciar Usuários</div>
@@ -474,6 +541,7 @@
             <button class="btn btn-primary" onclick="showAddUserModal()">+ Adicionar Usuário</button>
         </div>
 
+        <!-- Vehicle Management Screen -->
         <div id="vehicleManagementScreen" class="screen hidden">
             <div class="header">
                 <div style="font-size: 20px; font-weight: bold;">Gerenciar Veículos</div>
@@ -484,6 +552,7 @@
             <button class="btn btn-primary" onclick="showAddVehicleModal()">+ Adicionar Veículo</button>
         </div>
 
+        <!-- Reports Screen -->
         <div id="reportsScreen" class="screen hidden">
             <div class="header">
                 <div style="font-size: 20px; font-weight: bold;">Relatórios</div>
@@ -492,10 +561,10 @@
             <div class="card">
                 <h3>Estatísticas Gerais</h3>
                 <table class="table">
-                    <tr><td>Total de Viagens</td><td>15</td></tr>
-                    <tr><td>Viagens Concluídas</td><td>12</td></tr>
-                    <tr><td>KM Total Rodados</td><td>2,450</td></tr>
-                    <tr><td>Média KM/Viagem</td><td>163</td></tr>
+                    <tr><td>Total de Viagens</td><td id="reportTotalTrips">15</td></tr>
+                    <tr><td>Viagens Concluídas</td><td id="reportCompletedTrips">12</td></tr>
+                    <tr><td>KM Total Rodados</td><td id="reportTotalKm">2,450</td></tr>
+                    <tr><td>Média KM/Viagem</td><td id="reportAvgKm">163</td></tr>
                 </table>
             </div>
 
@@ -505,45 +574,33 @@
                     <thead>
                         <tr><th>Veículo</th><th>KM Atual</th><th>Revisão</th><th>Status</th></tr>
                     </thead>
-                    <tbody id="vehicleKmTable">
-                        <tr>
-                            <td>RTD-001</td>
-                            <td>15,000</td>
-                            <td>20,000</td>
-                            <td><span class="badge badge-success">OK</span></td>
-                        </tr>
-                        <tr>
-                            <td>RTD-002</td>
-                            <td>25,000</td>
-                            <td>25,000</td>
-                            <td><span class="badge badge-danger">Revisão necessária</span></td>
-                        </tr>
-                        <tr>
-                            <td>RTD-003</td>
-                            <td>8,000</td>
-                            <td>15,000</td>
-                            <td><span class="badge badge-success">OK</span></td>
-                        </tr>
-                    </tbody>
+                    <tbody id="vehicleKmTable"></tbody>
                 </table>
             </div>
 
             <button class="btn btn-success" onclick="generateExcelReport()">📊 Gerar Relatório Excel</button>
         </div>
 
+        <!-- Driver Screens -->
         <div id="driverHomeScreen" class="screen hidden">
             <div class="header">
                 <div style="font-size: 24px; font-weight: bold;">Olá, <span id="driverUserName"></span></div>
                 <div class="subtitle">Motorista</div>
             </div>
 
+            <div id="currentTripCard" class="card hidden">
+                <h3>Viagem Atual</h3>
+                <div id="currentTripInfo"></div>
+                <button class="btn btn-warning" onclick="finishCurrentTrip()">Finalizar Viagem</button>
+            </div>
+
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-number">8</div>
+                    <div class="stat-number" id="driverTotalTrips">8</div>
                     <div class="stat-label">Total de Viagens</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">3</div>
+                    <div class="stat-number" id="driverThisMonth">3</div>
                     <div class="stat-label">Este Mês</div>
                 </div>
             </div>
@@ -552,6 +609,7 @@
             <button class="btn btn-outline" onclick="logout()">Sair</button>
         </div>
 
+        <!-- New Trip Screen -->
         <div id="newTripScreen" class="screen hidden">
             <div class="step-indicator">
                 <div class="step active" id="step1">1</div>
@@ -633,6 +691,7 @@
             <button class="btn btn-outline" onclick="showScreen('driverHomeScreen')">Voltar</button>
         </div>
 
+        <!-- Maintenance Screens -->
         <div id="maintenanceHomeScreen" class="screen hidden">
             <div class="header">
                 <div style="font-size: 24px; font-weight: bold;">Olá, <span id="maintenanceUserName"></span></div>
@@ -641,15 +700,15 @@
 
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-number">3</div>
+                    <div class="stat-number" id="pendingMaintenanceOrders">3</div>
                     <div class="stat-label">OS Pendentes</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">1</div>
+                    <div class="stat-number" id="inProgressOrders">1</div>
                     <div class="stat-label">Em Andamento</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">2</div>
+                    <div class="stat-number" id="vehiclesInMaintenance">2</div>
                     <div class="stat-label">Veículos em Manutenção</div>
                 </div>
             </div>
@@ -658,6 +717,7 @@
             <button class="btn btn-outline" onclick="logout()">Sair</button>
         </div>
 
+        <!-- Service Orders Screen -->
         <div id="serviceOrdersScreen" class="screen hidden">
             <div class="header">
                 <div style="font-size: 20px; font-weight: bold;">Ordens de Serviço</div>
@@ -666,27 +726,17 @@
             <div class="card">
                 <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                     <button class="btn btn-primary" onclick="filterServiceOrders('PENDENTE')" style="width: auto; padding: 8px 12px; font-size: 12px;">Pendentes</button>
-                    <button class="btn btn-outline" onclick="filterServiceOrders('EM_ANDAMENTO')" style="width: auto; padding: 8px 12px; font-size: 12px;">Em Andamento</button>
+                    <button class="btn btn-secondary" onclick="filterServiceOrders('EM_ANDAMENTO')" style="width: auto; padding: 8px 12px; font-size: 12px;">Em Andamento</button>
                     <button class="btn btn-outline" onclick="filterServiceOrders('CONCLUIDA')" style="width: auto; padding: 8px 12px; font-size: 12px;">Concluídas</button>
                 </div>
 
-                <div id="serviceOrdersList">
-                    <div class="card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <strong>OS #1</strong>
-                            <span class="badge badge-warning">ALTA</span>
-                        </div>
-                        <p><strong>Veículo:</strong> RTD-002</p>
-                        <p><strong>Descrição:</strong> Revisão dos 25.000 km</p>
-                        <p><small>Criada em: 15/01/2024</small></p>
-                        <button class="btn btn-primary" onclick="startServiceOrder(1)">Iniciar</button>
-                    </div>
-                </div>
+                <div id="serviceOrdersList"></div>
             </div>
 
             <button class="btn btn-outline" onclick="showScreen('maintenanceHomeScreen')">Voltar</button>
         </div>
 
+        <!-- Manager Screen -->
         <div id="managerHomeScreen" class="screen hidden">
             <div class="header">
                 <div style="font-size: 24px; font-weight: bold;">Olá, <span id="managerUserName"></span></div>
@@ -695,19 +745,19 @@
 
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-number">12</div>
+                    <div class="stat-number" id="managerTripsMonth">12</div>
                     <div class="stat-label">Viagens Este Mês</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">3</div>
+                    <div class="stat-number" id="managerActiveDrivers">3</div>
                     <div class="stat-label">Motoristas Ativos</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">1,680</div>
+                    <div class="stat-number" id="managerKmMonth">1,680</div>
                     <div class="stat-label">KM Este Mês</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">2</div>
+                    <div class="stat-number" id="managerPendingOS">2</div>
                     <div class="stat-label">OS Pendentes</div>
                 </div>
             </div>
@@ -716,6 +766,7 @@
             <button class="btn btn-outline" onclick="logout()">Sair</button>
         </div>
 
+        <!-- Navigation (only for admin) -->
         <div id="adminNavigation" class="navigation hidden">
             <div class="nav-item" onclick="showScreen('adminHomeScreen')">🏠 Home</div>
             <div class="nav-item" onclick="showScreen('userManagementScreen')">👥 Usuários</div>
@@ -723,7 +774,7 @@
             <div class="nav-item" onclick="showScreen('reportsScreen')">📊 Relatórios</div>
         </div>
 
-        <!-- Modais -->
+        <!-- Modals (same as before) -->
         <div id="addUserModal" class="modal hidden">
             <div class="modal-content">
                 <h3>Novo Usuário</h3>
@@ -780,13 +831,33 @@
                 <button class="btn btn-outline" onclick="hideModal('addVehicleModal')">Cancelar</button>
             </div>
         </div>
+
+        <div id="finishTripModal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Finalizar Viagem</h3>
+                <div class="input-group">
+                    <label>KM Final</label>
+                    <input type="number" id="tripKmFinal" placeholder="Digite o KM final">
+                </div>
+                <div class="input-group">
+                    <label>Problemas na Viagem (opcional)</label>
+                    <textarea id="tripProblems" placeholder="Descreva problemas encontrados"></textarea>
+                </div>
+                <button class="btn btn-success" onclick="confirmFinishTrip()">Finalizar</button>
+                <button class="btn btn-outline" onclick="hideModal('finishTripModal')">Cancelar</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Dados mockados
+        // PWA Variables
+        let deferredPrompt;
+        let isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+        // Dados mockados (mesmo do anterior)
         let currentUser = null;
         let currentTripStep = 1;
-        let deferredPrompt;
+        let currentTrip = null;
 
         const users = [
             { id: 1, name: 'Administrador', email: 'admin@rtdigital.com', password: '123456', profile: 'ADM' },
@@ -798,7 +869,15 @@
         const vehicles = [
             { id: 1, prefix: 'RTD-001', model: 'Fiat Fiorino', plate: 'ABC-1234', year: 2020, kmCurrent: 15000, kmRevision: 20000, status: 'DISPONIVEL' },
             { id: 2, prefix: 'RTD-002', model: 'VW Saveiro', plate: 'DEF-5678', year: 2021, kmCurrent: 25000, kmRevision: 25000, status: 'MANUTENCAO' },
-            { id: 3, prefix: 'RTD-003', model: 'Ford Transit', plate: 'GHI-9012', year: 2019, kmCurrent: 8000, kmRevision: 15000, status: 'DISPONIVEL' }
+            { id: 3, prefix: 'RTD-003', model: 'Ford Transit', plate: 'GHI-9012', year: 2019, kmCurrent: 8000, kmRevision: 15000, status: 'DISPONIVEL' },
+            { id: 4, prefix: 'RTD-004', model: 'Renault Master', plate: 'JKL-3456', year: 2022, kmCurrent: 31000, kmRevision: 30000, status: 'DISPONIVEL' },
+            { id: 5, prefix: 'RTD-005', model: 'Iveco Daily', plate: 'MNO-7890', year: 2020, kmCurrent: 18000, kmRevision: 25000, status: 'EM_USO' }
+        ];
+
+        const serviceOrders = [
+            { id: 1, vehicleId: 2, description: 'Revisão dos 25.000 km', priority: 'ALTA', status: 'PENDENTE', createdAt: '2024-01-15' },
+            { id: 2, vehicleId: 4, description: 'Check-in não conforme: Pressão dos pneus', priority: 'NORMAL', status: 'PENDENTE', createdAt: '2024-01-16' },
+            { id: 3, vehicleId: 1, description: 'Problema relatado: Barulho no motor', priority: 'ALTA', status: 'EM_ANDAMENTO', createdAt: '2024-01-14' }
         ];
 
         const checkInItems = [
@@ -813,9 +892,12 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            setTimeout(() => {
-                document.getElementById('installPrompt').classList.remove('hidden');
-            }, 3000);
+            
+            if (!isStandalone) {
+                setTimeout(() => {
+                    document.getElementById('installPrompt').classList.remove('hidden');
+                }, 3000);
+            }
         });
 
         function installPWA() {
@@ -823,7 +905,7 @@
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        alert('RTdigital instalado com sucesso!');
+                        showAlert('RTdigital instalado com sucesso!', 'success');
                     }
                     deferredPrompt = null;
                     document.getElementById('installPrompt').classList.add('hidden');
@@ -833,22 +915,162 @@
 
         function dismissInstall() {
             document.getElementById('installPrompt').classList.add('hidden');
+            localStorage.setItem('installDismissed', 'true');
+        }
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(`data:application/javascript;base64,${btoa(`
+                const CACHE_NAME = 'rtdigital-v1';
+                const urlsToCache = ['/'];
+
+                self.addEventListener('install', event => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME)
+                            .then(cache => cache.addAll(urlsToCache))
+                    );
+                });
+
+                self.addEventListener('fetch', event => {
+                    event.respondWith(
+                        caches.match(event.request)
+                            .then(response => {
+                                if (response) {
+                                    return response;
+                                }
+                                return fetch(event.request);
+                            })
+                    );
+                });
+
+                self.addEventListener('message', event => {
+                    if (event.data && event.data.type === 'SYNC_DATA') {
+                        // Sincronizar dados quando online
+                        console.log('Sincronizando dados...', event.data.payload);
+                    }
+                });
+            `)}`).then(() => {
+                console.log('RTdigital Service Worker registrado com sucesso');
+            }).catch(error => {
+                console.log('Erro ao registrar Service Worker:', error);
+            });
         }
 
         // Connection Status
         function updateConnectionStatus() {
             const offlineIndicator = document.getElementById('offlineIndicator');
+            const connectionStatus = document.getElementById('connectionStatus');
             
             if (navigator.onLine) {
                 offlineIndicator.classList.add('hidden');
+                if (connectionStatus) {
+                    connectionStatus.className = 'alert alert-info';
+                    connectionStatus.innerHTML = '🌐 RTdigital PWA carregado - Funciona offline!';
+                }
+                
+                // Sync data when back online
+                syncOfflineData();
             } else {
                 offlineIndicator.classList.remove('hidden');
+                if (connectionStatus) {
+                    connectionStatus.className = 'alert alert-warning';
+                    connectionStatus.innerHTML = '📴 Modo Offline - Dados salvos localmente';
+                }
             }
         }
 
         window.addEventListener('online', updateConnectionStatus);
         window.addEventListener('offline', updateConnectionStatus);
 
+        // Local Storage for offline functionality
+        function saveToLocal(key, data) {
+            try {
+                localStorage.setItem(`rtdigital_${key}`, JSON.stringify({
+                    data: data,
+                    timestamp: Date.now(),
+                    synced: navigator.onLine
+                }));
+            } catch (error) {
+                console.log('Erro ao salvar dados localmente:', error);
+            }
+        }
+
+        function loadFromLocal(key) {
+            try {
+                const stored = localStorage.getItem(`rtdigital_${key}`);
+                return stored ? JSON.parse(stored) : null;
+            } catch (error) {
+                console.log('Erro ao carregar dados locais:', error);
+                return null;
+            }
+        }
+
+        function syncOfflineData() {
+            // Simular sincronização de dados offline
+            const unsyncedData = [];
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('rtdigital_') && key.includes('_pending')) {
+                    const data = loadFromLocal(key.replace('rtdigital_', ''));
+                    if (data && !data.synced) {
+                        unsyncedData.push(data);
+                    }
+                }
+            }
+
+            if (unsyncedData.length > 0) {
+                console.log(`Sincronizando ${unsyncedData.length} itens...`);
+                // Aqui você enviaria os dados para o servidor
+                
+                // Marcar como sincronizado
+                unsyncedData.forEach((item, index) => {
+                    setTimeout(() => {
+                        console.log('Item sincronizado:', item);
+                    }, index * 100);
+                });
+            }
+        }
+
+        // Notification API for PWA
+        function requestNotificationPermission() {
+            if ('Notification' in window && 'serviceWorker' in navigator) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        console.log('Permissão para notificações concedida');
+                    }
+                });
+            }
+        }
+
+        function showNotification(title, body, icon = '/icon-192.png') {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.showNotification(title, {
+                            body: body,
+                            icon: icon,
+                            badge: icon,
+                            tag: 'rtdigital-notification',
+                            requireInteraction: false,
+                            actions: [
+                                {
+                                    action: 'view',
+                                    title: 'Ver'
+                                }
+                            ]
+                        });
+                    });
+                } else {
+                    new Notification(title, {
+                        body: body,
+                        icon: icon
+                    });
+                }
+            }
+        }
+
+        // Enhanced functions with offline support
         function login() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
@@ -857,17 +1079,158 @@
             
             if (user) {
                 currentUser = user;
+                saveToLocal('currentUser', user);
                 showUserScreen();
-                alert('Login realizado com sucesso!');
+                showAlert('Login realizado com sucesso!', 'success');
+                
+                // Request notification permission on first login
+                if (!localStorage.getItem('notificationRequested')) {
+                    requestNotificationPermission();
+                    localStorage.setItem('notificationRequested', 'true');
+                }
             } else {
-                alert('Email ou senha inválidos!');
+                showAlert('Email ou senha inválidos!', 'error');
             }
         }
 
         function logout() {
             currentUser = null;
+            localStorage.removeItem('rtdigital_currentUser');
             showScreen('loginScreen');
             hideNavigation();
+        }
+
+        function addUser() {
+            const name = document.getElementById('newUserName').value;
+            const email = document.getElementById('newUserEmail').value;
+            const password = document.getElementById('newUserPassword').value;
+            const profile = document.getElementById('newUserProfile').value;
+
+            if (!name || !email || !password) {
+                showAlert('Preencha todos os campos!', 'error');
+                return;
+            }
+
+            const newUser = {
+                id: users.length + 1,
+                name,
+                email,
+                password,
+                profile
+            };
+
+            users.push(newUser);
+            saveToLocal('users', users);
+            
+            hideModal('addUserModal');
+            loadUsers();
+            updateAdminStats();
+            showAlert('Usuário adicionado com sucesso!', 'success');
+            
+            // Show notification if supported
+            showNotification('Novo Usuário', `${name} foi adicionado como ${profile}`);
+
+            // Clear form
+            document.getElementById('newUserName').value = '';
+            document.getElementById('newUserEmail').value = '';
+            document.getElementById('newUserPassword').value = '';
+        }
+
+        function addVehicle() {
+            const prefix = document.getElementById('newVehiclePrefix').value;
+            const model = document.getElementById('newVehicleModel').value;
+            const plate = document.getElementById('newVehiclePlate').value;
+            const year = document.getElementById('newVehicleYear').value;
+            const revision = document.getElementById('newVehicleRevision').value;
+
+            if (!prefix || !model || !plate || !revision) {
+                showAlert('Preencha todos os campos obrigatórios!', 'error');
+                return;
+            }
+
+            const newVehicle = {
+                id: vehicles.length + 1,
+                prefix,
+                model,
+                plate,
+                year: parseInt(year) || null,
+                kmCurrent: 0,
+                kmRevision: parseInt(revision),
+                status: 'DISPONIVEL'
+            };
+
+            vehicles.push(newVehicle);
+            saveToLocal('vehicles', vehicles);
+            
+            hideModal('addVehicleModal');
+            loadVehicles();
+            updateAdminStats();
+            showAlert('Veículo adicionado com sucesso!', 'success');
+            
+            // Show notification
+            showNotification('Novo Veículo', `${prefix} - ${model} foi adicionado à frota`);
+
+            // Clear form
+            document.getElementById('newVehiclePrefix').value = '';
+            document.getElementById('newVehicleModel').value = '';
+            document.getElementById('newVehiclePlate').value = '';
+            document.getElementById('newVehicleYear').value = '';
+            document.getElementById('newVehicleRevision').value = '';
+        }
+
+        // All other functions remain the same as the previous version
+        // (showScreen, updateAdminStats, loadUsers, loadVehicles, etc.)
+        
+        // Copy all the existing functions from the previous version here...
+        // [Previous functions would be copied here to maintain full functionality]
+
+        // Initialize PWA
+        document.addEventListener('DOMContentLoaded', function() {
+            updateConnectionStatus();
+            
+            // Load saved user if exists
+            const savedUser = loadFromLocal('currentUser');
+            if (savedUser && savedUser.data) {
+                currentUser = savedUser.data;
+                showUserScreen();
+            }
+            
+            // Check if install prompt was dismissed
+            if (localStorage.getItem('installDismissed') === 'true') {
+                document.getElementById('installPrompt').classList.add('hidden');
+            }
+            
+            console.log('RTdigital PWA inicializado com sucesso!');
+        });
+
+        // All existing functions from previous version...
+        function showScreen(screenId) {
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(screen => screen.classList.add('hidden'));
+            
+            document.getElementById(screenId).classList.remove('hidden');
+
+            if (screenId === 'userManagementScreen') {
+                loadUsers();
+            } else if (screenId === 'vehicleManagementScreen') {
+                loadVehicles();
+            } else if (screenId === 'reportsScreen') {
+                loadReports();
+            } else if (screenId === 'serviceOrdersScreen') {
+                loadServiceOrders();
+            }
+        }
+
+        function showNavigation() {
+            document.getElementById('adminNavigation').classList.remove('hidden');
+        }
+
+        function hideNavigation() {
+            document.getElementById('adminNavigation').classList.add('hidden');
+        }
+
+        function showAlert(message, type) {
+            alert(message);
         }
 
         function showUserScreen() {
@@ -882,44 +1245,29 @@
                 case 'MOTORISTA':
                     showScreen('driverHomeScreen');
                     document.getElementById('driverUserName').textContent = currentUser.name;
+                    updateDriverStats();
                     break;
                 case 'MANUTENCAO':
                     showScreen('maintenanceHomeScreen');
                     document.getElementById('maintenanceUserName').textContent = currentUser.name;
+                    updateMaintenanceStats();
                     break;
                 case 'GERENCIA':
                     showScreen('managerHomeScreen');
                     document.getElementById('managerUserName').textContent = currentUser.name;
+                    updateManagerStats();
                     break;
             }
         }
 
-        function showScreen(screenId) {
-            const screens = document.querySelectorAll('.screen');
-            screens.forEach(screen => screen.classList.add('hidden'));
-            
-            document.getElementById(screenId).classList.remove('hidden');
-
-            if (screenId === 'userManagementScreen') {
-                loadUsers();
-            } else if (screenId === 'vehicleManagementScreen') {
-                loadVehicles();
-            }
-        }
-
-        function showNavigation() {
-            document.getElementById('adminNavigation').classList.remove('hidden');
-        }
-
-        function hideNavigation() {
-            document.getElementById('adminNavigation').classList.add('hidden');
-        }
-
         function updateAdminStats() {
             const availableVehicles = vehicles.filter(v => v.status === 'DISPONIVEL').length;
+            const pendingOrders = serviceOrders.filter(so => so.status === 'PENDENTE').length;
+
             document.getElementById('totalVehicles').textContent = vehicles.length;
             document.getElementById('availableVehicles').textContent = availableVehicles;
             document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('pendingOrders').textContent = pendingOrders;
         }
 
         function checkRevisionAlerts() {
@@ -928,7 +1276,11 @@
             
             if (vehiclesNeedingRevision.length > 0) {
                 const vehicleList = vehiclesNeedingRevision.map(v => v.prefix).join(', ');
-                alertContainer.innerHTML = '<div class="alert alert-warning">⚠️ <strong>Atenção:</strong> ' + vehiclesNeedingRevision.length + ' veículo(s) precisam de revisão: ' + vehicleList + '</div>';
+                alertContainer.innerHTML = \`
+                    <div class="alert alert-warning">
+                        ⚠️ <strong>Atenção:</strong> \${vehiclesNeedingRevision.length} veículo(s) precisam de revisão: \${vehicleList}
+                    </div>
+                \`;
             } else {
                 alertContainer.innerHTML = '';
             }
@@ -946,10 +1298,19 @@
                     'MANUTENCAO': '#ffc107'
                 };
 
-                const userDiv = document.createElement('div');
-                userDiv.className = 'user-item';
-                userDiv.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center;"><div><strong>' + user.name + '</strong><br><small>' + user.email + '</small></div><span class="badge" style="background: ' + profileColors[user.profile] + '; color: white;">' + user.profile + '</span></div>';
-                usersList.appendChild(userDiv);
+                usersList.innerHTML += \`
+                    <div class="user-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>\${user.name}</strong><br>
+                                <small>\${user.email}</small>
+                            </div>
+                            <span class="badge" style="background: \${profileColors[user.profile]}; color: white;">
+                                \${user.profile}
+                            </span>
+                        </div>
+                    </div>
+                \`;
             });
         }
 
@@ -959,13 +1320,135 @@
 
             vehicles.forEach(vehicle => {
                 const needsRevision = vehicle.kmCurrent >= vehicle.kmRevision;
-                const statusClass = vehicle.status === 'MANUTENCAO' ? 'maintenance' : vehicle.status === 'INDISPONIVEL' ? 'unavailable' : '';
+                const statusClass = vehicle.status === 'MANUTENCAO' ? 'maintenance' : 
+                                   vehicle.status === 'INDISPONIVEL' ? 'unavailable' : '';
 
-                const vehicleDiv = document.createElement('div');
-                vehicleDiv.className = 'vehicle-item ' + statusClass;
-                vehicleDiv.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center;"><div><strong>' + vehicle.prefix + '</strong> - ' + vehicle.model + '<br><small>Placa: ' + vehicle.plate + ' | KM: ' + vehicle.kmCurrent.toLocaleString() + '</small><br><small>Revisão em: ' + vehicle.kmRevision.toLocaleString() + ' km</small>' + (needsRevision ? '<br><span style="color: #dc3545; font-weight: bold;">⚠️ Revisão necessária!</span>' : '') + '</div><span class="badge badge-' + (vehicle.status === 'DISPONIVEL' ? 'success' : vehicle.status === 'MANUTENCAO' ? 'warning' : 'danger') + '">' + vehicle.status + '</span></div>';
-                vehiclesList.appendChild(vehicleDiv);
+                vehiclesList.innerHTML += \`
+                    <div class="vehicle-item \${statusClass}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>\${vehicle.prefix}</strong> - \${vehicle.model}<br>
+                                <small>Placa: \${vehicle.plate} | KM: \${vehicle.kmCurrent.toLocaleString()}</small><br>
+                                <small>Revisão em: \${vehicle.kmRevision.toLocaleString()} km</small>
+                                \${needsRevision ? '<br><span style="color: #dc3545; font-weight: bold;">⚠️ Revisão necessária!</span>' : ''}
+                            </div>
+                            <span class="badge badge-\${vehicle.status === 'DISPONIVEL' ? 'success' : vehicle.status === 'MANUTENCAO' ? 'warning' : 'danger'}">
+                                \${vehicle.status}
+                            </span>
+                        </div>
+                    </div>
+                \`;
             });
+        }
+
+        function loadReports() {
+            const vehicleKmTable = document.getElementById('vehicleKmTable');
+            vehicleKmTable.innerHTML = '';
+
+            vehicles.forEach(vehicle => {
+                const needsRevision = vehicle.kmCurrent >= vehicle.kmRevision;
+                vehicleKmTable.innerHTML += \`
+                    <tr>
+                        <td>\${vehicle.prefix}</td>
+                        <td>\${vehicle.kmCurrent.toLocaleString()}</td>
+                        <td>\${vehicle.kmRevision.toLocaleString()}</td>
+                        <td>
+                            <span class="badge badge-\${needsRevision ? 'danger' : 'success'}">
+                                \${needsRevision ? 'Revisão necessária' : 'OK'}
+                            </span>
+                        </td>
+                    </tr>
+                \`;
+            });
+        }
+
+        function updateDriverStats() {
+            document.getElementById('driverTotalTrips').textContent = '8';
+            document.getElementById('driverThisMonth').textContent = '3';
+        }
+
+        function updateMaintenanceStats() {
+            const pending = serviceOrders.filter(so => so.status === 'PENDENTE').length;
+            const inProgress = serviceOrders.filter(so => so.status === 'EM_ANDAMENTO').length;
+            const vehiclesInMaintenance = vehicles.filter(v => v.status === 'MANUTENCAO').length;
+
+            document.getElementById('pendingMaintenanceOrders').textContent = pending;
+            document.getElementById('inProgressOrders').textContent = inProgress;
+            document.getElementById('vehiclesInMaintenance').textContent = vehiclesInMaintenance;
+        }
+
+        function updateManagerStats() {
+            document.getElementById('managerTripsMonth').textContent = '12';
+            document.getElementById('managerActiveDrivers').textContent = users.filter(u => u.profile === 'MOTORISTA').length;
+            document.getElementById('managerKmMonth').textContent = '1,680';
+            document.getElementById('managerPendingOS').textContent = serviceOrders.filter(so => so.status === 'PENDENTE').length;
+        }
+
+        function loadServiceOrders(filter = 'PENDENTE') {
+            const filteredOrders = serviceOrders.filter(so => so.status === filter);
+            const ordersList = document.getElementById('serviceOrdersList');
+            ordersList.innerHTML = '';
+
+            filteredOrders.forEach(order => {
+                const vehicle = vehicles.find(v => v.id === order.vehicleId);
+                const priorityColors = {
+                    'BAIXA': '#28a745',
+                    'NORMAL': '#2196f3',
+                    'ALTA': '#ffc107',
+                    'URGENTE': '#dc3545'
+                };
+
+                ordersList.innerHTML += \`
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong>OS #\${order.id}</strong>
+                            <span class="badge" style="background: \${priorityColors[order.priority]}; color: white;">
+                                \${order.priority}
+                            </span>
+                        </div>
+                        <p><strong>Veículo:</strong> \${vehicle.prefix}</p>
+                        <p><strong>Descrição:</strong> \${order.description}</p>
+                        <p><small>Criada em: \${order.createdAt}</small></p>
+                        \${order.status === 'PENDENTE' ? 
+                            '<button class="btn btn-primary" onclick="startServiceOrder(' + order.id + ')">Iniciar</button>' :
+                            order.status === 'EM_ANDAMENTO' ?
+                            '<button class="btn btn-success" onclick="completeServiceOrder(' + order.id + ')">Concluir</button>' :
+                            ''
+                        }
+                    </div>
+                \`;
+            });
+        }
+
+        function filterServiceOrders(status) {
+            loadServiceOrders(status);
+        }
+
+        function startServiceOrder(orderId) {
+            const order = serviceOrders.find(so => so.id === orderId);
+            if (order) {
+                order.status = 'EM_ANDAMENTO';
+                saveToLocal('serviceOrders', serviceOrders);
+                loadServiceOrders('EM_ANDAMENTO');
+                showAlert('Ordem de serviço iniciada!', 'success');
+            }
+        }
+
+        function completeServiceOrder(orderId) {
+            const order = serviceOrders.find(so => so.id === orderId);
+            if (order) {
+                order.status = 'CONCLUIDA';
+                
+                const vehicle = vehicles.find(v => v.id === order.vehicleId);
+                if (vehicle && vehicle.status === 'MANUTENCAO') {
+                    vehicle.status = 'DISPONIVEL';
+                }
+                
+                saveToLocal('serviceOrders', serviceOrders);
+                saveToLocal('vehicles', vehicles);
+                loadServiceOrders('CONCLUIDA');
+                showAlert('Ordem de serviço concluída! Veículo liberado.', 'success');
+            }
         }
 
         function nextTripStep() {
@@ -976,12 +1459,12 @@
                 const kmInitial = document.getElementById('tripKmInitial').value;
 
                 if (!vehicle || !origin || !destination || !kmInitial) {
-                    alert('Preencha todos os campos!');
+                    showAlert('Preencha todos os campos!', 'error');
                     return;
                 }
 
                 if (origin === destination) {
-                    alert('Origem e destino devem ser diferentes!');
+                    showAlert('Origem e destino devem ser diferentes!', 'error');
                     return;
                 }
 
@@ -1011,16 +1494,31 @@
             checkInContainer.innerHTML = '';
 
             checkInItems.forEach(item => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'card';
-                itemDiv.innerHTML = '<h4>' + item.description + '</h4><div class="checkbox-group"><div class="checkbox-item"><input type="radio" name="item_' + item.id + '" value="CONFORME" checked><label>✅ Conforme</label></div><div class="checkbox-item"><input type="radio" name="item_' + item.id + '" value="NAO_CONFORME"><label>❌ Não Conforme</label></div></div><div class="input-group hidden" id="obs_' + item.id + '"><label>Observação</label><textarea placeholder="Descreva o problema"></textarea></div>';
-                checkInContainer.appendChild(itemDiv);
+                checkInContainer.innerHTML += \`
+                    <div class="card">
+                        <h4>\${item.description}</h4>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="radio" name="item_\${item.id}" value="CONFORME" checked>
+                                <label>✅ Conforme</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="radio" name="item_\${item.id}" value="NAO_CONFORME">
+                                <label>❌ Não Conforme</label>
+                            </div>
+                        </div>
+                        <div class="input-group hidden" id="obs_\${item.id}">
+                            <label>Observação</label>
+                            <textarea placeholder="Descreva o problema"></textarea>
+                        </div>
+                    </div>
+                \`;
             });
 
             document.querySelectorAll('input[type="radio"]').forEach(radio => {
                 radio.addEventListener('change', function() {
                     const itemId = this.name.split('_')[1];
-                    const obsDiv = document.getElementById('obs_' + itemId);
+                    const obsDiv = document.getElementById(\`obs_\${itemId}\`);
                     if (this.value === 'NAO_CONFORME') {
                         obsDiv.classList.remove('hidden');
                     } else {
@@ -1034,18 +1532,25 @@
             const vehicle = vehicles.find(v => v.id == document.getElementById('tripVehicle').value);
             const nonConformItems = checkNonConformItems();
 
-            document.getElementById('tripSummary').innerHTML = '<p><strong>Veículo:</strong> ' + vehicle.prefix + '</p><p><strong>KM Inicial:</strong> ' + document.getElementById('tripKmInitial').value + '</p><p><strong>Check-in:</strong> Realizado com sucesso</p>';
+            document.getElementById('tripSummary').innerHTML = \`
+                <p><strong>Veículo:</strong> \${vehicle.prefix}</p>
+                <p><strong>KM Inicial:</strong> \${document.getElementById('tripKmInitial').value}</p>
+                <p><strong>Check-in:</strong> Realizado com sucesso</p>
+            \`;
 
             if (nonConformItems.length > 0) {
                 document.getElementById('nonConformAlert').classList.remove('hidden');
-                document.getElementById('nonConformAlert').innerHTML = '⚠️ ' + nonConformItems.length + ' item(ns) não conforme(s) encontrado(s). Ordens de serviço serão geradas automaticamente.';
+                document.getElementById('nonConformAlert').innerHTML = \`
+                    ⚠️ \${nonConformItems.length} item(ns) não conforme(s) encontrado(s). 
+                    Ordens de serviço serão geradas automaticamente.
+                \`;
             }
         }
 
         function checkNonConformItems() {
             const nonConformItems = [];
             checkInItems.forEach(item => {
-                const selectedRadio = document.querySelector('input[name="item_' + item.id + '"]:checked');
+                const selectedRadio = document.querySelector(\`input[name="item_\${item.id}"]:checked\`);
                 if (selectedRadio && selectedRadio.value === 'NAO_CONFORME') {
                     nonConformItems.push(item);
                 }
@@ -1054,7 +1559,16 @@
         }
 
         function confirmTrip() {
-            alert('Boa viagem! Viagem iniciada com sucesso.');
+            currentTrip = {
+                id: Date.now(),
+                vehicle: vehicles.find(v => v.id == document.getElementById('tripVehicle').value),
+                kmInitial: document.getElementById('tripKmInitial').value,
+                status: 'EM_ANDAMENTO'
+            };
+
+            saveToLocal('currentTrip', currentTrip);
+            showAlert('Boa viagem! Viagem iniciada com sucesso.', 'success');
+            showNotification('Viagem Iniciada', \`Boa viagem com o veículo \${currentTrip.vehicle.prefix}!\`);
             showScreen('driverHomeScreen');
             
             currentTripStep = 1;
@@ -1066,12 +1580,41 @@
             document.getElementById('step3').className = 'step';
         }
 
-        function filterServiceOrders(status) {
-            alert('Filtrando ordens de serviço: ' + status);
+        function finishCurrentTrip() {
+            if (currentTrip) {
+                showModal('finishTripModal');
+            }
         }
 
-        function startServiceOrder(orderId) {
-            alert('Iniciando ordem de serviço #' + orderId);
+        function confirmFinishTrip() {
+            const kmFinal = document.getElementById('tripKmFinal').value;
+            const problems = document.getElementById('tripProblems').value;
+
+            if (!kmFinal) {
+                showAlert('Digite o KM final!', 'error');
+                return;
+            }
+
+            if (parseInt(kmFinal) <= parseInt(currentTrip.kmInitial)) {
+                showAlert('KM final deve ser maior que o inicial!', 'error');
+                return;
+            }
+
+            currentTrip.kmFinal = kmFinal;
+            currentTrip.problems = problems;
+            currentTrip.status = 'FINALIZADA';
+
+            const vehicle = vehicles.find(v => v.id === currentTrip.vehicle.id);
+            if (vehicle) {
+                vehicle.kmCurrent = parseInt(kmFinal);
+            }
+
+            saveToLocal('vehicles', vehicles);
+            currentTrip = null;
+            localStorage.removeItem('rtdigital_currentTrip');
+            hideModal('finishTripModal');
+            showAlert('Viagem finalizada com sucesso!', 'success');
+            showNotification('Viagem Finalizada', 'Viagem concluída com sucesso!');
         }
 
         function showModal(modalId) {
@@ -1090,104 +1633,9 @@
             showModal('addVehicleModal');
         }
 
-        function addUser() {
-            const name = document.getElementById('newUserName').value;
-            const email = document.getElementById('newUserEmail').value;
-            const password = document.getElementById('newUserPassword').value;
-            const profile = document.getElementById('newUserProfile').value;
-
-            if (!name || !email || !password) {
-                alert('Preencha todos os campos!');
-                return;
-            }
-
-            const newUser = {
-                id: users.length + 1,
-                name,
-                email,
-                password,
-                profile
-            };
-
-            users.push(newUser);
-            hideModal('addUserModal');
-            loadUsers();
-            updateAdminStats();
-            alert('Usuário adicionado com sucesso!');
-
-            document.getElementById('newUserName').value = '';
-            document.getElementById('newUserEmail').value = '';
-            document.getElementById('newUserPassword').value = '';
-        }
-
-        function addVehicle() {
-            const prefix = document.getElementById('newVehiclePrefix').value;
-            const model = document.getElementById('newVehicleModel').value;
-            const plate = document.getElementById('newVehiclePlate').value;
-            const year = document.getElementById('newVehicleYear').value;
-            const revision = document.getElementById('newVehicleRevision').value;
-
-            if (!prefix || !model || !plate || !revision) {
-                alert('Preencha todos os campos obrigatórios!');
-                return;
-            }
-
-            const newVehicle = {
-                id: vehicles.length + 1,
-                prefix,
-                model,
-                plate,
-                year: parseInt(year) || null,
-                kmCurrent: 0,
-                kmRevision: parseInt(revision),
-                status: 'DISPONIVEL'
-            };
-
-            vehicles.push(newVehicle);
-            hideModal('addVehicleModal');
-            loadVehicles();
-            updateAdminStats();
-            alert('Veículo adicionado com sucesso!');
-
-            document.getElementById('newVehiclePrefix').value = '';
-            document.getElementById('newVehicleModel').value = '';
-            document.getElementById('newVehiclePlate').value = '';
-            document.getElementById('newVehicleYear').value = '';
-            document.getElementById('newVehicleRevision').value = '';
-        }
-
         function generateExcelReport() {
-            alert('Relatório Excel gerado com sucesso! (Funcionalidade simulada)');
-        }
-
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            updateConnectionStatus();
-            console.log('RTdigital PWA inicializado com sucesso!');
-        });
-
-        // Service Worker simples
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                const swCode = `
-                    self.addEventListener('install', function(event) {
-                        console.log('RTdigital Service Worker instalado');
-                    });
-                    
-                    self.addEventListener('fetch', function(event) {
-                        event.respondWith(fetch(event.request));
-                    });
-                `;
-                
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                
-                navigator.serviceWorker.register(swUrl).then(function(registration) {
-                    console.log('RTdigital Service Worker registrado com sucesso');
-                }).catch(function(error) {
-                    console.log('Erro ao registrar Service Worker:', error);
-                });
-            });
+            showAlert('Relatório Excel gerado com sucesso! (Funcionalidade simulada)', 'success');
+            showNotification('Relatório Gerado', 'Relatório Excel criado com sucesso!');
         }
     </script>
 </body>
