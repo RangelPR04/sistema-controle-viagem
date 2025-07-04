@@ -1,1642 +1,3356 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RTdigital - Gestão de Frota</title>
+import React, { useState, useCallback, useMemo } from 'react';
+import { Camera, CheckCircle, XCircle, Play, Square, FileText, Wrench, Users, Truck, Settings, LogOut, Eye, Plus, Edit2, Trash2, AlertTriangle, ArrowLeft, MapPin, Clock, User, Search, Filter, BarChart3, TrendingUp, Activity, Bell, Menu, X } from 'lucide-react';
+
+const App = () => {
+  const [usuario, setUsuario] = useState({
+    nome: null,
+    tipo: null,
+    tela: 'login'
+  });
+  const [modalAtivo, setModalAtivo] = useState(null);
+  const [sidebarAberta, setSidebarAberta] = useState(false);
+  
+  // Estados para dados
+  const [credenciaisAdmin] = useState({
+    usuario: 'admin',
+    senha: 'admin123'
+  });
+  
+  const [usuarios, setUsuarios] = useState([
+    { id: 1, nome: 'João Silva', senha: '123456', tipo: 'motorista', status: 'ativo' },
+    { id: 2, nome: 'Maria Santos', senha: '123456', tipo: 'motorista', status: 'ativo' },
+    { id: 3, nome: 'Pedro Oliveira', senha: '123456', tipo: 'motorista', status: 'ativo' },
+    { id: 4, nome: 'Carlos Manutenção', senha: 'manut123', tipo: 'manutencao', status: 'ativo' },
+    { id: 5, nome: 'Ana Gerente', senha: 'gerente123', tipo: 'gerencia', status: 'ativo' }
+  ]);
+  
+  const [veiculos, setVeiculos] = useState([
+    { id: 1, prefixo: '1001', placa: 'ABC-1234', modelo: 'Mercedes-Benz O-500', status: 'ativo' },
+    { id: 2, prefixo: '1002', placa: 'DEF-5678', modelo: 'Volvo B270F', status: 'ativo' },
+    { id: 3, prefixo: '1003', placa: 'GHI-9012', modelo: 'Scania K270', status: 'manutencao' }
+  ]);
+  
+  const [cidades, setCidades] = useState([
+    { id: 1, nome: 'São Paulo', uf: 'SP' },
+    { id: 2, nome: 'Rio de Janeiro', uf: 'RJ' },
+    { id: 3, nome: 'Belo Horizonte', uf: 'MG' },
+    { id: 4, nome: 'Salvador', uf: 'BA' },
+    { id: 5, nome: 'Brasília', uf: 'DF' }
+  ]);
+  
+  const [itensChecklist, setItensChecklist] = useState([
+    { id: 1, nome: 'Pneus', obrigatorio: true },
+    { id: 2, nome: 'Freios', obrigatorio: true },
+    { id: 3, nome: 'Luzes', obrigatorio: true },
+    { id: 4, nome: 'Portas', obrigatorio: true },
+    { id: 5, nome: 'Interior', obrigatorio: true },
+    { id: 6, nome: 'Extintor', obrigatorio: true },
+    { id: 7, nome: 'Documentação', obrigatorio: true },
+    { id: 8, nome: 'Limpeza', obrigatorio: false }
+  ]);
+  
+  const [viagens, setViagens] = useState([
+    {
+      id: 1,
+      motorista: 'João Silva',
+      origem: 'São Paulo - SP',
+      destino: 'Rio de Janeiro - RJ',
+      prefixo: '1003',
+      kmInicial: '50000',
+      kmFinal: '50450',
+      kmPercorridos: 450,
+      diversidades: 'Trânsito intenso na Dutra',
+      ordemServico: 'Verificar freios',
+      dataHora: '2025-01-15 08:30',
+      temProblemas: true,
+      statusManutencao: undefined,
+      itensNaoConformes: [
+        {
+          id: 'item_001',
+          item: 'Freios',
+          status: 'nao-conforme',
+          observacao: 'Ruído nos freios traseiros',
+          obrigatorio: true,
+          resolvido: false
+        }
+      ]
+    }
+  ]);
+  
+  // Estados do formulário de login (SIMPLES)
+  const [loginUsuario, setLoginUsuario] = useState('');
+  const [loginSenha, setLoginSenha] = useState('');
+  
+  // Estados para formulários (SIMPLES)
+  const [nomeUsuario, setNomeUsuario] = useState('');
+  const [senhaUsuario, setSenhaUsuario] = useState('');
+  const [tipoUsuarioNovo, setTipoUsuarioNovo] = useState('motorista');
+  
+  const [prefixoVeiculo, setPrefixoVeiculo] = useState('');
+  const [placaVeiculo, setPlacaVeiculo] = useState('');
+  const [modeloVeiculo, setModeloVeiculo] = useState('');
+  
+  const [nomeCidade, setNomeCidade] = useState('');
+  const [ufCidade, setUfCidade] = useState('');
+  
+  const [nomeItemChecklist, setNomeItemChecklist] = useState('');
+  const [obrigatorioItemChecklist, setObrigatorioItemChecklist] = useState(true);
+
+  // Estados para controle de viagem (MOTORISTA)
+  const [etapaViagem, setEtapaViagem] = useState('inicial');
+  const [dadosViagem, setDadosViagem] = useState({
+    motorista: '',
+    origem: '',
+    destino: '',
+    prefixo: '',
+    kmInicial: '',
+    kmFinal: '',
+    diversidades: '',
+    ordemServico: ''
+  });
+  const [checklistViagem, setChecklistViagem] = useState([]);
+  const [sugestoesOrigem, setSugestoesOrigem] = useState([]);
+  const [sugestoesDestino, setSugestoesDestino] = useState([]);
+  const [mostrarSugestoesOrigem, setMostrarSugestoesOrigem] = useState(false);
+  const [mostrarSugestoesDestino, setMostrarSugestoesDestino] = useState(false);
+
+  // Funções básicas (SEM CALLBACKS COMPLEXOS)
+  const fazerLogin = () => {
+    // Verificar se é admin primeiro
+    if (loginUsuario === credenciaisAdmin.usuario && loginSenha === credenciaisAdmin.senha) {
+      setUsuario({
+        nome: 'Administrador',
+        tipo: 'admin',
+        tela: 'dashboard-admin'
+      });
+      return;
+    }
     
-    <!-- PWA Meta Tags -->
-    <meta name="description" content="Sistema completo de gestão de frota com diferentes perfis de usuário">
-    <meta name="theme-color" content="#2196f3">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="RTdigital">
-    <meta name="msapplication-TileColor" content="#2196f3">
+    // Buscar usuário normal
+    const usuarioEncontrado = usuarios.find(u => 
+      u.nome.toLowerCase() === loginUsuario.toLowerCase() && 
+      u.senha === loginSenha &&
+      u.status === 'ativo'
+    );
     
-    <!-- PWA Links -->
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlJUZGlnaXRhbCAtIEdlc3TDo28gZGUgRnJvdGEiLAogICJzaG9ydF9uYW1lIjogIlJUZGlnaXRhbCIsCiAgImRlc2NyaXB0aW9uIjogIlNpc3RlbWEgY29tcGxldG8gZGUgZ2VzdMOjbyBkZSBmcm90YSBjb20gZGlmZXJlbnRlcyBwZXJmaXMgZGUgdXN1w6FyaW8iLAogICJzdGFydF91cmwiOiAiLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2ZmZmZmZiIsCiAgInRoZW1lX2NvbG9yIjogIiMyMTk2ZjMiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjNhV1IwYUQwaU1qUXdJaUJvWldsbmFIUTlJakkwTUNJZ2RtbGxkMEp2ZUQwaU1DQXdJakkwTUNBeU5EQWlJR1pwYkd3OUlpTXlNVGsyWmpNaVBnbzhjbVZqZENCM2FXUjBhRDBpTWpRd0lpQm9aV2xuYUhROUlqSTBNQ0lnWm1sc2JEMGlJekl4T1RabU15SXZQZ2c4ZEdWNGRDQjRQU0l4TWpBaUlIazlJalE0SWlCbWIyNTBMWE5wZW1VOUlqUXdJaUJtYVd4c1BTSWpabVptSWlCbWIyNTBMWGRsYVdkb2REMGlZbTlzWkNJK1VsUmtKejR2ZEdWNGRENDhMM04yWno0PSIsCiAgICAgICJzaXplcyI6ICIyNDB4MjQwIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCM2FXUjBhRDBpTlRFeUlpQm9aV2xuYUhROUlqVXhNaUlnZG1sbGQwSnZlRDBpTUNBd0lEVXhNaUExTVRJaUlHWnBiR3c5SWlNeU1UazJaak1pUGdnOGNtVmpkQ0IzYVdSMGFEMGlOVEV5SWlCb1pXbG5hSFE5SWpVeE1pSWdabWxzYkQwaUl6SXhPVFptTXlJdlBnZzhkR1Y0ZENCNFBTSTJOQ0lnZVQwaU1UQXpJaUJtYjI1MExYTnBlbVU5SWpVNElpQm1hV3hzUFNJalptWm1JaUJtYjI1MExYZGxhV2RvZEQwaVltOXNaQ0krVWxSa1p6NHZkR1Y0ZEQ0OEwzTjJaejQ9IiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0sCiAgImNhdGVnb3JpZXMiOiBbImJ1c2luZXNzIiwgInByb2R1Y3Rpdml0eSIsICJ1dGlsaXRpZXMiXQp9">
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgdmlld0JveD0iMCAwIDI0MCAyNDAiIGZpbGw9IiMyMTk2ZjMiPgo8cmVjdCB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgZmlsbD0iIzIxOTZmMyIvPgo8dGV4dCB4PSIxMjAiIHk9IjQ4IiBmb250LXNpemU9IjQwIiBmaWxsPSIjZmZmIiBmb250LXdlaWdodD0iYm9sZCI+UlRkZzwvdGV4dD48L3N2Zz4=">
+    if (usuarioEncontrado) {
+      let telaDestino = 'dashboard-admin'; // default
+      
+      if (usuarioEncontrado.tipo === 'motorista') {
+        telaDestino = 'dashboard-motorista';
+      } else if (usuarioEncontrado.tipo === 'manutencao') {
+        telaDestino = 'dashboard-manutencao';
+      } else if (usuarioEncontrado.tipo === 'gerencia') {
+        telaDestino = 'dashboard-gerencia';
+      }
+      
+      setUsuario({
+        nome: usuarioEncontrado.nome,
+        tipo: usuarioEncontrado.tipo,
+        tela: telaDestino
+      });
+    } else {
+      alert('Usuário ou senha incorretos!');
+    }
+  };
+
+  const logout = () => {
+    setUsuario({
+      nome: null,
+      tipo: null,
+      tela: 'login'
+    });
+    setLoginUsuario('');
+    setLoginSenha('');
+    setModalAtivo(null);
+    setSidebarAberta(false);
+  };
+
+  const adicionarUsuario = () => {
+    if (nomeUsuario && senhaUsuario) {
+      const novoId = Math.max(...usuarios.map(u => u.id), 0) + 1;
+      setUsuarios([...usuarios, { 
+        id: novoId, 
+        nome: nomeUsuario, 
+        senha: senhaUsuario, 
+        tipo: tipoUsuarioNovo, 
+        status: 'ativo' 
+      }]);
+      setNomeUsuario('');
+      setSenhaUsuario('');
+      setTipoUsuarioNovo('motorista');
+    }
+  };
+
+  const adicionarVeiculo = () => {
+    if (prefixoVeiculo && placaVeiculo && modeloVeiculo) {
+      const novoId = Math.max(...veiculos.map(v => v.id), 0) + 1;
+      setVeiculos([...veiculos, { 
+        id: novoId, 
+        prefixo: prefixoVeiculo, 
+        placa: placaVeiculo, 
+        modelo: modeloVeiculo, 
+        status: 'ativo' 
+      }]);
+      setPrefixoVeiculo('');
+      setPlacaVeiculo('');
+      setModeloVeiculo('');
+    }
+  };
+
+  const adicionarCidade = () => {
+    if (nomeCidade && ufCidade) {
+      const novoId = Math.max(...cidades.map(c => c.id), 0) + 1;
+      setCidades([...cidades, { 
+        id: novoId, 
+        nome: nomeCidade, 
+        uf: ufCidade 
+      }]);
+      setNomeCidade('');
+      setUfCidade('');
+    }
+  };
+
+  const adicionarItemChecklist = () => {
+    if (nomeItemChecklist) {
+      const novoId = Math.max(...itensChecklist.map(i => i.id), 0) + 1;
+      setItensChecklist([...itensChecklist, { 
+        id: novoId, 
+        nome: nomeItemChecklist, 
+        obrigatorio: obrigatorioItemChecklist 
+      }]);
+      setNomeItemChecklist('');
+      setObrigatorioItemChecklist(true);
+    }
+  };
+
+  const removerUsuario = (id) => {
+    setUsuarios(usuarios.filter(u => u.id !== id));
+  };
+
+  const removerVeiculo = (id) => {
+    setVeiculos(veiculos.filter(v => v.id !== id));
+  };
+
+  const removerItemChecklist = (id) => {
+    setItensChecklist(itensChecklist.filter(i => i.id !== id));
+  };
+
+  const liberarVeiculo = (id) => {
+    const veiculo = veiculos.find(v => v.id === id);
+    if (!veiculo) return;
     
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    const problemasRestantes = viagens.filter(v => 
+      v.prefixo === veiculo.prefixo && 
+      ((v.itensNaoConformes?.some(item => !item.resolvido)) || 
+       (v.ordemServico && v.ordemServico.trim() && v.statusManutencao !== 'resolvida'))
+    );
+    
+    if (problemasRestantes.length > 0) {
+      const confirmar = confirm(
+        `⚠️ ATENÇÃO!\n\nO veículo ${veiculo.prefixo} ainda possui ${problemasRestantes.length} problema(s) não resolvido(s).\n\nTem certeza que deseja liberar o veículo mesmo assim?`
+      );
+      
+      if (!confirmar) return;
+    }
+    
+    setVeiculos(veiculos.map(v => 
+      v.id === id ? { ...v, status: 'ativo' } : v
+    ));
+    
+    alert(`✅ Veículo ${veiculo.prefixo} foi liberado e está disponível para uso!`);
+  };
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            user-select: none;
-        }
+  const colocarEmManutencao = (prefixo) => {
+    setVeiculos(veiculos.map(v => 
+      v.prefixo === prefixo ? { ...v, status: 'manutencao' } : v
+    ));
+    
+    setViagens(viagens.map(v => 
+      v.prefixo === prefixo && (v.ordemServico || v.checklist?.some(c => c.status === 'nao-conforme'))
+        ? { ...v, statusManutencao: 'em_tratamento' }
+        : v
+    ));
+    
+    alert(`🔧 Veículo ${prefixo} foi colocado em manutenção.`);
+  };
 
-        .app-container {
-            width: 100%;
-            max-width: 400px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            min-height: 600px;
-            position: relative;
-        }
+  const resolverItemChecklist = (viagemId, itemId) => {
+    setViagens(viagens.map(v => 
+      v.id === viagemId 
+        ? {
+            ...v,
+            itensNaoConformes: v.itensNaoConformes?.map(item => 
+              item.id === itemId ? { ...item, resolvido: true } : item
+            )
+          }
+        : v
+    ));
+    
+    alert('✅ Item do checklist resolvido!');
+  };
 
-        .screen {
-            padding: 20px;
-            min-height: 500px;
-        }
+  const processarOS = (viagemId) => {
+    const viagem = viagens.find(v => v.id === viagemId);
+    if (viagem) {
+      setViagens(viagens.map(v => 
+        v.id === viagemId ? { ...v, statusManutencao: 'resolvida' } : v
+      ));
+      
+      alert(`✅ Ordem de serviço do veículo ${viagem.prefixo} foi processada!`);
+    }
+  };
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+  // Funções para controle de viagem (MOTORISTA)
+  const buscarCidades = (termo, tipo) => {
+    if (termo.length < 2) {
+      if (tipo === 'origem') {
+        setSugestoesOrigem([]);
+        setMostrarSugestoesOrigem(false);
+      } else {
+        setSugestoesDestino([]);
+        setMostrarSugestoesDestino(false);
+      }
+      return;
+    }
 
-        .logo {
-            font-size: 32px;
-            font-weight: bold;
-            color: #2196f3;
-            margin-bottom: 10px;
-        }
+    const cidadesFiltradas = cidades.filter(cidade => 
+      cidade.nome.toLowerCase().includes(termo.toLowerCase()) ||
+      cidade.uf.toLowerCase().includes(termo.toLowerCase())
+    );
 
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-        }
+    if (tipo === 'origem') {
+      setSugestoesOrigem(cidadesFiltradas);
+      setMostrarSugestoesOrigem(true);
+    } else {
+      setSugestoesDestino(cidadesFiltradas);
+      setMostrarSugestoesDestino(true);
+    }
+  };
 
-        .card {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            border: 1px solid #e9ecef;
-        }
+  const selecionarCidade = (cidade, tipo) => {
+    const nomeCompleto = `${cidade.nome} - ${cidade.uf}`;
+    handleInputChangeViagem(tipo, nomeCompleto);
+    
+    if (tipo === 'origem') {
+      setMostrarSugestoesOrigem(false);
+    } else {
+      setMostrarSugestoesDestino(false);
+    }
+  };
 
-        .input-group {
-            margin-bottom: 15px;
-        }
+  const handleInputChangeViagem = (field, value) => {
+    setDadosViagem(prev => ({ ...prev, [field]: value }));
+  };
 
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #495057;
-        }
+  const handleChecklistChangeViagem = (index, field, value) => {
+    setChecklistViagem(prev => prev.map((item, i) => 
+      i === index ? { ...item, [field]: value } : item
+    ));
+  };
 
-        .input-group input, .input-group select, .input-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
+  const iniciarViagem = () => {
+    setEtapaViagem('viagem');
+  };
 
-        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
-            outline: none;
-            border-color: #2196f3;
-        }
+  const finalizarViagem = () => {
+    setEtapaViagem('finalizacao');
+  };
 
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 10px;
-            touch-action: manipulation;
-        }
+  const concluirViagem = () => {
+    const kmInicial = parseFloat(dadosViagem.kmInicial);
+    const kmFinal = parseFloat(dadosViagem.kmFinal);
+    
+    if (!dadosViagem.kmFinal || kmFinal <= kmInicial) {
+      alert('ERRO: O KM final deve ser maior que o KM inicial!');
+      return;
+    }
+    
+    const itensNaoConformes = checklistViagem.filter(item => item.status === 'nao-conforme');
+    const temProblemas = itensNaoConformes.length > 0 || 
+                        dadosViagem.diversidades.trim() !== '' || 
+                        dadosViagem.ordemServico.trim() !== '';
+    
+    const novaViagem = {
+      id: viagens.length + 1,
+      ...dadosViagem,
+      checklist: [...checklistViagem],
+      dataHora: new Date().toLocaleString(),
+      kmPercorridos: kmFinal - kmInicial,
+      temProblemas,
+      itensNaoConformes: itensNaoConformes.map(item => ({
+        ...item,
+        resolvido: false,
+        id: Math.random().toString(36).substr(2, 9)
+      }))
+    };
+    
+    setViagens([...viagens, novaViagem]);
+    
+    if (itensNaoConformes.length > 0) {
+      setVeiculos(veiculos.map(v => 
+        v.prefixo === dadosViagem.prefixo ? { ...v, status: 'manutencao' } : v
+      ));
+      
+      alert(`⚠️ Viagem concluída!\n\nVeículo ${dadosViagem.prefixo} foi automaticamente colocado em manutenção devido aos itens não conformes encontrados.`);
+    } else if (dadosViagem.ordemServico.trim()) {
+      alert('✅ Viagem concluída!\n\n⚠️ Ordem de serviço registrada para o veículo.');
+    } else {
+      alert('✅ Viagem concluída com sucesso!');
+    }
+    
+    setEtapaViagem('concluida');
+  };
 
-        .btn:active {
-            transform: scale(0.98);
-        }
+  const novaViagem = () => {
+    setEtapaViagem('inicial');
+    setDadosViagem({
+      motorista: usuario.nome,
+      origem: '',
+      destino: '',
+      prefixo: '',
+      kmInicial: '',
+      kmFinal: '',
+      diversidades: '',
+      ordemServico: ''
+    });
+    const checklistInicial = itensChecklist.map(item => ({
+      item: item.nome,
+      status: 'pendente',
+      foto: false,
+      observacao: '',
+      obrigatorio: item.obrigatorio
+    }));
+    setChecklistViagem(checklistInicial);
+    setSugestoesOrigem([]);
+    setSugestoesDestino([]);
+    setMostrarSugestoesOrigem(false);
+    setMostrarSugestoesDestino(false);
+  };
 
-        .btn-primary {
-            background: #2196f3;
-            color: white;
-        }
+  const podeIniciarViagem = () => {
+    return dadosViagem.motorista && 
+           dadosViagem.origem && 
+           dadosViagem.destino && 
+           dadosViagem.prefixo && 
+           dadosViagem.kmInicial &&
+           checklistViagem.every(item => item.obrigatorio ? item.status !== 'pendente' : true);
+  };
 
-        .btn-primary:hover {
-            background: #1976d2;
-        }
+  // Dados calculados
+  const estatisticas = useMemo(() => {
+    const problemasAtivos = viagens.reduce((total, viagem) => {
+      const itensNaoResolvidos = viagem.itensNaoConformes?.filter(item => !item.resolvido)?.length || 0;
+      const osNaoResolvida = (viagem.ordemServico && viagem.ordemServico.trim() && viagem.statusManutencao !== 'resolvida') ? 1 : 0;
+      return total + itensNaoResolvidos + osNaoResolvida;
+    }, 0);
 
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
+    const totalKm = viagens.reduce((total, viagem) => total + viagem.kmPercorridos, 0);
+    const veiculosManutencao = veiculos.filter(v => v.status === 'manutencao').length;
 
-        .btn-outline {
-            background: transparent;
-            color: #2196f3;
-            border: 2px solid #2196f3;
-        }
+    return {
+      totalUsuarios: usuarios.length,
+      totalVeiculos: veiculos.length,
+      totalCidades: cidades.length,
+      totalViagens: viagens.length,
+      totalItensChecklist: itensChecklist.length,
+      problemasAtivos,
+      totalKm,
+      veiculosManutencao
+    };
+  }, [usuarios, veiculos, cidades, viagens, itensChecklist]);
 
-        .btn-outline:hover {
-            background: #2196f3;
-            color: white;
-        }
+  // CSS básico como string (não causa re-renderização)
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    border: '2px solid #e5e7eb',
+    borderRadius: '12px',
+    fontSize: '16px',
+    boxSizing: 'border-box',
+    backgroundColor: '#ffffff',
+    outline: 'none',
+    fontFamily: 'inherit',
+    transition: 'border-color 0.2s ease'
+  };
 
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
+  const buttonStyle = {
+    width: '100%',
+    padding: '14px 20px',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '600',
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    fontFamily: 'inherit',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white'
+  };
 
-        .btn-warning {
-            background: #ffc107;
-            color: #212529;
-        }
+  const buttonSecondaryStyle = {
+    ...buttonStyle,
+    background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+    color: '#374151'
+  };
 
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
+  const buttonDangerStyle = {
+    ...buttonStyle,
+    background: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)',
+    width: 'auto',
+    padding: '8px 12px'
+  };
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
+  // Handle do Enter no login
+  const handleLoginKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      fazerLogin();
+    }
+  };
 
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
+  // TELA DE LOGIN
+  if (usuario.tela === 'login') {
+    return (
+      <div style={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+      }}>
+        <div style={{
+          maxWidth: '400px',
+          width: '100%',
+          backgroundColor: 'white',
+          borderRadius: '20px',
+          padding: '40px',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto'
+            }}>
+              <Truck style={{ width: '40px', height: '40px', color: 'white' }} />
+            </div>
+            <h1 style={{ 
+              fontSize: '28px', 
+              fontWeight: '700', 
+              color: '#1f2937',
+              margin: '0 0 8px 0'
+            }}>
+              Sistema de Viagens
+            </h1>
+            <p style={{ 
+              color: '#6b7280', 
+              fontSize: '16px',
+              margin: 0
+            }}>
+              Controle de Frota Inteligente
+            </p>
+          </div>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <input
+              type="text"
+              placeholder="Nome do usuário"
+              value={loginUsuario}
+              onChange={(e) => setLoginUsuario(e.target.value)}
+              onKeyPress={handleLoginKeyPress}
+              style={inputStyle}
+            />
+          </div>
+          
+          <div style={{ marginBottom: '30px' }}>
+            <input
+              type="password"
+              placeholder="Senha"
+              value={loginSenha}
+              onChange={(e) => setLoginSenha(e.target.value)}
+              onKeyPress={handleLoginKeyPress}
+              style={inputStyle}
+            />
+          </div>
+          
+          <div style={{ marginBottom: '24px' }}>
+            <button
+              onClick={fazerLogin}
+              style={buttonStyle}
+            >
+              Entrar no Sistema
+            </button>
+          </div>
+          
+          <div style={{ 
+            fontSize: '12px', 
+            color: '#6b7280', 
+            textAlign: 'center',
+            lineHeight: '1.5',
+            padding: '16px',
+            backgroundColor: '#f9fafb',
+            borderRadius: '12px'
+          }}>
+            <p style={{ margin: '2px 0', fontWeight: '500' }}>Contas de Demonstração:</p>
+            <p style={{ margin: '2px 0' }}>🔑 <strong>Admin:</strong> admin / admin123</p>
+            <p style={{ margin: '2px 0' }}>🚗 <strong>Motorista:</strong> João Silva / 123456</p>
+            <p style={{ margin: '2px 0' }}>🔧 <strong>Manutenção:</strong> Carlos Manutenção / manut123</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #2196f3;
-            margin-bottom: 5px;
-        }
+  // DASHBOARD MOTORISTA
+  if (usuario.tela === 'dashboard-motorista') {
+    // Inicializar dados da viagem se necessário
+    if (dadosViagem.motorista === '') {
+      setDadosViagem(prev => ({ ...prev, motorista: usuario.nome }));
+      const checklistInicial = itensChecklist.map(item => ({
+        item: item.nome,
+        status: 'pendente',
+        foto: false,
+        observacao: '',
+        obrigatorio: item.obrigatorio
+      }));
+      setChecklistViagem(checklistInicial);
+    }
 
-        .stat-label {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 5px solid;
-        }
-
-        .alert-warning {
-            background: #fff3cd;
-            border-left-color: #ffc107;
-            color: #856404;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            border-left-color: #28a745;
-            color: #155724;
-        }
-
-        .alert-info {
-            background: #cce7ff;
-            border-left-color: #2196f3;
-            color: #004085;
-        }
-
-        .navigation {
-            background: #2196f3;
-            display: flex;
-            border-radius: 0 0 20px 20px;
-        }
-
-        .nav-item {
-            flex: 1;
-            padding: 15px 10px;
-            text-align: center;
-            color: white;
-            cursor: pointer;
-            transition: background 0.3s;
-            font-size: 12px;
-            touch-action: manipulation;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            background: rgba(255,255,255,0.2);
-        }
-
-        .vehicle-item, .user-item, .trip-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 5px solid #2196f3;
-        }
-
-        .vehicle-item.maintenance {
-            border-left-color: #ffc107;
-        }
-
-        .vehicle-item.unavailable {
-            border-left-color: #dc3545;
-        }
-
-        .checkbox-group {
-            margin-bottom: 15px;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            cursor: pointer;
-            touch-action: manipulation;
-        }
-
-        .checkbox-item input[type="radio"] {
-            margin-right: 10px;
-        }
-
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .success-check {
-            text-align: center;
-            font-size: 64px;
-            color: #28a745;
-            margin: 20px 0;
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        .table th, .table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
-            font-size: 14px;
-        }
-
-        .table th {
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 500;
-        }
-
-        .badge-success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge-warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .badge-danger {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .badge-primary {
-            background: #cce7ff;
-            color: #004085;
-        }
-
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .step {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: #e9ecef;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 10px;
-            font-weight: bold;
-            color: #6c757d;
-        }
-
-        .step.active {
-            background: #2196f3;
-            color: white;
-        }
-
-        .step.completed {
-            background: #28a745;
-            color: white;
-        }
-
-        /* PWA specific styles */
-        .install-prompt {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background: #2196f3;
-            color: white;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            z-index: 1001;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .offline-indicator {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: #dc3545;
-            color: white;
-            padding: 10px;
-            text-align: center;
-            font-size: 14px;
-            z-index: 1002;
-        }
-
-        .pwa-status {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #28a745;
-            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-        }
-
-        @media (display-mode: standalone) {
-            .pwa-status {
-                background: #2196f3;
-                box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
-            }
+    if (etapaViagem === 'inicial') {
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(135deg, #bfdbfe 0%, #dbeafe 100%)',
+          padding: '16px',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        }}>
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e3a8a' }}>
+              Sistema de Controle de Viagem
+            </h1>
+            <button
+              onClick={logout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: 'white',
+                background: buttonDangerStyle.background,
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
+            >
+              <LogOut size={20} />
+              <span>Sair</span>
+            </button>
+          </header>
+          
+          <div style={{
+            maxWidth: '500px',
+            margin: '0 auto',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            padding: '32px'
+          }}>
             
-            @keyframes pulse {
-                0% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.7); }
-                70% { box-shadow: 0 0 0 10px rgba(33, 150, 243, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0); }
-            }
-        }
+            {/* Campo Motorista */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                Motorista
+              </label>
+              <input
+                type="text"
+                value={dadosViagem.motorista}
+                disabled
+                style={{
+                  ...inputStyle,
+                  backgroundColor: '#f3f4f6',
+                  color: '#6b7280'
+                }}
+              />
+            </div>
 
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-            .card {
-                background: #2d3748;
-                color: white;
-            }
+            {/* Origem e Destino */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ position: 'relative' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Origem
+                </label>
+                <input
+                  type="text"
+                  value={dadosViagem.origem}
+                  onChange={(e) => {
+                    handleInputChangeViagem('origem', e.target.value);
+                    buscarCidades(e.target.value, 'origem');
+                  }}
+                  onBlur={() => setTimeout(() => setMostrarSugestoesOrigem(false), 300)}
+                  onFocus={() => {
+                    if (dadosViagem.origem.length >= 2) {
+                      buscarCidades(dadosViagem.origem, 'origem');
+                    }
+                  }}
+                  placeholder="Digite ou selecione a origem"
+                  style={inputStyle}
+                />
+                {mostrarSugestoesOrigem && sugestoesOrigem.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    zIndex: 10,
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    maxHeight: '160px',
+                    overflowY: 'auto',
+                    marginTop: '4px'
+                  }}>
+                    {sugestoesOrigem.map(cidade => (
+                      <button
+                        key={cidade.id}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          selecionarCidade(cidade, 'origem');
+                        }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '12px',
+                          border: 'none',
+                          borderBottom: '1px solid #f3f4f6',
+                          backgroundColor: 'white',
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                      >
+                        <span style={{ fontWeight: '500' }}>{cidade.nome}</span>
+                        <span style={{ color: '#6b7280', marginLeft: '8px' }}>- {cidade.uf}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div style={{ position: 'relative' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Destino
+                </label>
+                <input
+                  type="text"
+                  value={dadosViagem.destino}
+                  onChange={(e) => {
+                    handleInputChangeViagem('destino', e.target.value);
+                    buscarCidades(e.target.value, 'destino');
+                  }}
+                  onBlur={() => setTimeout(() => setMostrarSugestoesDestino(false), 300)}
+                  onFocus={() => {
+                    if (dadosViagem.destino.length >= 2) {
+                      buscarCidades(dadosViagem.destino, 'destino');
+                    }
+                  }}
+                  placeholder="Digite ou selecione o destino"
+                  style={inputStyle}
+                />
+                {mostrarSugestoesDestino && sugestoesDestino.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    zIndex: 10,
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    maxHeight: '160px',
+                    overflowY: 'auto',
+                    marginTop: '4px'
+                  }}>
+                    {sugestoesDestino.map(cidade => (
+                      <button
+                        key={cidade.id}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          selecionarCidade(cidade, 'destino');
+                        }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '12px',
+                          border: 'none',
+                          borderBottom: '1px solid #f3f4f6',
+                          backgroundColor: 'white',
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                      >
+                        <span style={{ fontWeight: '500' }}>{cidade.nome}</span>
+                        <span style={{ color: '#6b7280', marginLeft: '8px' }}>- {cidade.uf}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Prefixo e KM Inicial */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Prefixo do Ônibus
+                </label>
+                <select
+                  value={dadosViagem.prefixo}
+                  onChange={(e) => handleInputChangeViagem('prefixo', e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">Selecione</option>
+                  {veiculos.map(veiculo => (
+                    <option key={veiculo.id} value={veiculo.prefixo}>
+                      {veiculo.prefixo} - {veiculo.placa} {veiculo.status === 'manutencao' ? '(⚠️ Em Manutenção)' : ''}
+                    </option>
+                  ))}
+                </select>
+                
+                {dadosViagem.prefixo && veiculos.find(v => v.prefixo === dadosViagem.prefixo)?.status === 'manutencao' && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '12px',
+                    backgroundColor: '#fffbeb',
+                    border: '1px solid #fed7aa',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <AlertTriangle size={20} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#92400e', fontSize: '14px' }}>
+                        ⚠️ Veículo com Pendências
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#92400e', marginTop: '2px' }}>
+                        Este veículo possui pendências de manutenção. Viagem permitida, mas informe qualquer problema encontrado.
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  KM Inicial
+                </label>
+                <input
+                  type="number"
+                  value={dadosViagem.kmInicial}
+                  onChange={(e) => handleInputChangeViagem('kmInicial', e.target.value)}
+                  placeholder="KM"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            {/* Checklist */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+                Checklist de Verificação
+              </h3>
+              <div>
+                {checklistViagem.map((item, index) => (
+                  <div key={index} style={{ 
+                    backgroundColor: '#f9fafb', 
+                    borderRadius: '8px', 
+                    padding: '16px',
+                    marginBottom: '12px'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginBottom: item.status === 'nao-conforme' ? '12px' : 0
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: '500' }}>{item.item}</span>
+                        {item.obrigatorio ? (
+                          <span style={{
+                            backgroundColor: '#fef2f2',
+                            color: '#991b1b',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px'
+                          }}>
+                            Obrigatório
+                          </span>
+                        ) : (
+                          <span style={{
+                            backgroundColor: '#eff6ff',
+                            color: '#1d4ed8',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px'
+                          }}>
+                            Opcional
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                          onClick={() => handleChecklistChangeViagem(index, 'status', 'conforme')}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            border: 'none',
+                            cursor: 'pointer',
+                            backgroundColor: item.status === 'conforme' ? '#059669' : '#e5e7eb',
+                            color: item.status === 'conforme' ? 'white' : '#374151'
+                          }}
+                        >
+                          Conforme
+                        </button>
+                        <button
+                          onClick={() => handleChecklistChangeViagem(index, 'status', 'nao-conforme')}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            border: 'none',
+                            cursor: 'pointer',
+                            backgroundColor: item.status === 'nao-conforme' ? '#dc2626' : '#e5e7eb',
+                            color: item.status === 'nao-conforme' ? 'white' : '#374151'
+                          }}
+                        >
+                          Não Conforme
+                        </button>
+                        <button
+                          onClick={() => handleChecklistChangeViagem(index, 'foto', !item.foto)}
+                          style={{
+                            padding: '8px',
+                            borderRadius: '4px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            backgroundColor: item.foto ? '#2563eb' : '#d1d5db',
+                            color: item.foto ? 'white' : '#6b7280'
+                          }}
+                          title="Tirar foto"
+                        >
+                          <Camera size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    {item.status === 'nao-conforme' && (
+                      <textarea
+                        placeholder="Descreva o problema encontrado..."
+                        value={item.observacao}
+                        onChange={(e) => handleChecklistChangeViagem(index, 'observacao', e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          fontSize: '14px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '4px',
+                          resize: 'none',
+                          rows: 2,
+                          boxSizing: 'border-box'
+                        }}
+                        rows="2"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Botão Iniciar Viagem */}
+            <button
+              onClick={iniciarViagem}
+              disabled={!podeIniciarViagem()}
+              style={{
+                width: '100%',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: 'white',
+                border: 'none',
+                cursor: podeIniciarViagem() ? 'pointer' : 'not-allowed',
+                backgroundColor: podeIniciarViagem() ? '#16a34a' : '#9ca3af',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <Play size={24} />
+              <span>Iniciar Viagem</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (etapaViagem === 'viagem') {
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(135deg, #bbf7d0 0%, #dcfce7 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        }}>
+          <div style={{
+            maxWidth: '500px',
+            margin: '0 auto',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            padding: '40px',
+            textAlign: 'center'
+          }}>
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                backgroundColor: '#16a34a',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px auto'
+              }}>
+                <Play style={{ color: 'white' }} size={40} />
+              </div>
+              <h2 style={{ 
+                fontSize: '32px', 
+                fontWeight: 'bold', 
+                color: '#16a34a',
+                margin: '0 0 8px 0'
+              }}>
+                Boa Viagem!
+              </h2>
+              <p style={{ color: '#6b7280', marginBottom: '4px' }}>
+                Viagem de {dadosViagem.origem} para {dadosViagem.destino}
+              </p>
+              <p style={{ fontSize: '14px', color: '#9ca3af' }}>
+                Ônibus: {dadosViagem.prefixo} | Motorista: {dadosViagem.motorista}
+              </p>
+            </div>
+
+            <button
+              onClick={finalizarViagem}
+              style={{
+                width: '100%',
+                backgroundColor: '#dc2626',
+                color: 'white',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <Square size={24} />
+              <span>Finalizar Viagem</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (etapaViagem === 'finalizacao') {
+      const kmInicial = parseFloat(dadosViagem.kmInicial);
+      const kmFinal = parseFloat(dadosViagem.kmFinal);
+      const kmInvalido = dadosViagem.kmFinal && kmFinal <= kmInicial;
+      
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(135deg, #fed7aa 0%, #fef3c7 100%)',
+          padding: '16px',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        }}>
+          <div style={{
+            maxWidth: '500px',
+            margin: '0 auto',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            padding: '32px'
+          }}>
+            <h2 style={{ 
+              fontSize: '24px', 
+              fontWeight: 'bold', 
+              color: '#ea580c',
+              marginBottom: '24px',
+              textAlign: 'center'
+            }}>
+              Finalização da Viagem
+            </h2>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                KM Final
+              </label>
+              <input
+                type="number"
+                value={dadosViagem.kmFinal}
+                onChange={(e) => handleInputChangeViagem('kmFinal', e.target.value)}
+                placeholder="Quilometragem final"
+                style={{
+                  ...inputStyle,
+                  border: kmInvalido ? '1px solid #dc2626' : '1px solid #d1d5db',
+                  backgroundColor: kmInvalido ? '#fef2f2' : 'white'
+                }}
+              />
+              {kmInvalido && (
+                <div style={{
+                  marginTop: '8px',
+                  padding: '8px',
+                  backgroundColor: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '4px',
+                  color: '#b91c1c',
+                  fontSize: '14px'
+                }}>
+                  <strong>⚠️ Erro:</strong> KM final ({kmFinal}) deve ser maior que KM inicial ({kmInicial})
+                </div>
+              )}
+              <div style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
+                KM inicial da viagem: {dadosViagem.kmInicial}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                color: '#374151',
+                marginBottom: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <FileText size={16} />
+                Relatar Diversidades da Viagem
+              </label>
+              <textarea
+                value={dadosViagem.diversidades}
+                onChange={(e) => handleInputChangeViagem('diversidades', e.target.value)}
+                placeholder="Descreva qualquer ocorrência durante a viagem..."
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  height: '80px',
+                  resize: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                color: '#374151',
+                marginBottom: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <Wrench size={16} />
+                Ordem de Serviço
+              </label>
+              <textarea
+                value={dadosViagem.ordemServico}
+                onChange={(e) => handleInputChangeViagem('ordemServico', e.target.value)}
+                placeholder="Serviços necessários no veículo..."
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  height: '80px',
+                  resize: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ 
+              backgroundColor: '#f9fafb', 
+              padding: '16px', 
+              borderRadius: '8px',
+              marginBottom: '24px'
+            }}>
+              <h4 style={{ fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Resumo da Viagem:</h4>
+              <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                <p style={{ margin: '4px 0' }}><strong>Motorista:</strong> {dadosViagem.motorista}</p>
+                <p style={{ margin: '4px 0' }}><strong>Rota:</strong> {dadosViagem.origem} → {dadosViagem.destino}</p>
+                <p style={{ margin: '4px 0' }}><strong>Ônibus:</strong> {dadosViagem.prefixo}</p>
+                <p style={{ margin: '4px 0' }}><strong>KM Inicial:</strong> {dadosViagem.kmInicial}</p>
+                {dadosViagem.kmFinal && (
+                  <p style={{ margin: '4px 0' }}><strong>KM Percorridos:</strong> {dadosViagem.kmFinal - dadosViagem.kmInicial} km</p>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={concluirViagem}
+              disabled={kmInvalido || !dadosViagem.kmFinal}
+              style={{
+                width: '100%',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: 'white',
+                border: 'none',
+                cursor: (kmInvalido || !dadosViagem.kmFinal) ? 'not-allowed' : 'pointer',
+                backgroundColor: (kmInvalido || !dadosViagem.kmFinal) ? '#9ca3af' : '#2563eb'
+              }}
+            >
+              {kmInvalido ? 'Corrija o KM Final' : 'Concluir Viagem'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (etapaViagem === 'concluida') {
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(135deg, #bfdbfe 0%, #dbeafe 100%)',
+          padding: '16px',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        }}>
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e3a8a' }}>
+              Sistema de Controle de Viagem
+            </h1>
+            <button
+              onClick={logout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: 'white',
+                background: buttonDangerStyle.background,
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
+            >
+              <LogOut size={20} />
+              <span>Sair</span>
+            </button>
+          </header>
+          
+          <div style={{
+            maxWidth: '500px',
+            margin: '0 auto',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            padding: '40px',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              backgroundColor: '#2563eb',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px auto'
+            }}>
+              <CheckCircle style={{ color: 'white' }} size={40} />
+            </div>
+            <h2 style={{ 
+              fontSize: '24px', 
+              fontWeight: 'bold', 
+              color: '#2563eb',
+              marginBottom: '16px'
+            }}>
+              Viagem Concluída!
+            </h2>
+            <p style={{ color: '#6b7280', marginBottom: '24px' }}>
+              Todos os dados foram salvos com sucesso.
+            </p>
             
-            .input-group input, .input-group select, .input-group textarea {
-                background: #4a5568;
-                color: white;
-                border-color: #4a5568;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <!-- PWA Status Indicator -->
-        <div class="pwa-status" title="RTdigital PWA Ativo"></div>
+            <div style={{ 
+              backgroundColor: '#f9fafb', 
+              padding: '16px', 
+              borderRadius: '8px',
+              marginBottom: '24px',
+              textAlign: 'left'
+            }}>
+              <h4 style={{ fontWeight: '600', color: '#374151', marginBottom: '8px' }}>Relatório Final:</h4>
+              <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                <p style={{ margin: '4px 0' }}><strong>Motorista:</strong> {dadosViagem.motorista}</p>
+                <p style={{ margin: '4px 0' }}><strong>Rota:</strong> {dadosViagem.origem} → {dadosViagem.destino}</p>
+                <p style={{ margin: '4px 0' }}><strong>Ônibus:</strong> {dadosViagem.prefixo}</p>
+                <p style={{ margin: '4px 0' }}><strong>KM Percorridos:</strong> {dadosViagem.kmFinal - dadosViagem.kmInicial} km</p>
+                {dadosViagem.diversidades && (
+                  <p style={{ margin: '4px 0' }}><strong>Diversidades:</strong> {dadosViagem.diversidades}</p>
+                )}
+                {dadosViagem.ordemServico && (
+                  <p style={{ margin: '4px 0' }}><strong>Ordem de Serviço:</strong> {dadosViagem.ordemServico}</p>
+                )}
+                
+                {checklistViagem.filter(item => item.status === 'nao-conforme').length > 0 && (
+                  <div style={{ 
+                    marginTop: '12px', 
+                    padding: '12px', 
+                    backgroundColor: '#fffbeb', 
+                    border: '1px solid #fed7aa', 
+                    borderRadius: '6px' 
+                  }}>
+                    <p style={{ margin: '0 0 6px 0', fontWeight: '600', color: '#92400e' }}>
+                      ⚠️ Itens com Problemas Detectados:
+                    </p>
+                    {checklistViagem.filter(item => item.status === 'nao-conforme').map((item, idx) => (
+                      <p key={idx} style={{ margin: '2px 0', fontSize: '13px', color: '#92400e' }}>
+                        • <strong>{item.item}:</strong> {item.observacao}
+                      </p>
+                    ))}
+                    <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#92400e', fontStyle: 'italic' }}>
+                      O veículo foi automaticamente colocado em manutenção.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={novaViagem}
+              style={{
+                width: '100%',
+                backgroundColor: '#16a34a',
+                color: 'white',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              Nova Viagem
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  }
+
+  // DASHBOARD MANUTENÇÃO
+  if (usuario.tela === 'dashboard-manutencao') {
+    const veiculosManutencao = veiculos.filter(v => v.status === 'manutencao');
+    const viagensComOS = viagens.filter(v => 
+      v.ordemServico && 
+      v.ordemServico.trim() !== '' && 
+      v.statusManutencao !== 'resolvida'
+    );
+    
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#f8fafc',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+      }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+          padding: '24px',
+          color: 'white'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            maxWidth: '1200px',
+            margin: '0 auto'
+          }}>
+            <div>
+              <h1 style={{ fontSize: '32px', fontWeight: '700', margin: '0 0 8px 0' }}>
+                Painel de Manutenção
+              </h1>
+              <p style={{ fontSize: '18px', margin: 0, opacity: 0.9 }}>
+                Olá, {usuario.nome}! Gerencie a manutenção da frota.
+              </p>
+            </div>
+            <button
+              onClick={logout}
+              style={{
+                ...buttonDangerStyle,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <LogOut size={18} />
+              Sair
+            </button>
+          </div>
+        </div>
         
-        <!-- Offline Indicator -->
-        <div id="offlineIndicator" class="offline-indicator hidden">
-            📴 Modo Offline - Dados salvos localmente
-        </div>
-
-        <!-- Install Prompt -->
-        <div id="installPrompt" class="install-prompt hidden">
-            <div style="margin-bottom: 10px;">📱 Instalar RTdigital como aplicativo?</div>
-            <button class="btn btn-success" onclick="installPWA()" style="margin: 5px; width: auto; padding: 8px 16px;">Instalar</button>
-            <button class="btn btn-outline" onclick="dismissInstall()" style="margin: 5px; width: auto; padding: 8px 16px; color: white; border-color: white;">Depois</button>
-        </div>
-
-        <div id="loginScreen" class="screen">
-            <div class="header">
-                <div class="logo">RTdigital</div>
-                <div class="subtitle">Sistema de Gestão de Frota</div>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px' }}>
+          {/* Cards de Resumo */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '24px',
+            marginBottom: '32px'
+          }}>
+            {/* Card Veículos em Manutenção */}
+            <div style={{
+              background: 'linear-gradient(135deg, #dc2626 0%, #f97316 100%)',
+              padding: '24px',
+              borderRadius: '16px',
+              color: 'white',
+              boxShadow: '0 8px 25px rgba(220, 38, 38, 0.25)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Veículos em Manutenção</h3>
+                  <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{veiculosManutencao.length}</p>
+                </div>
+                <Wrench size={40} style={{ opacity: 0.3 }} />
+              </div>
             </div>
+
+            {/* Card Ordens de Serviço */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f59e0b 0%, #eab308 100%)',
+              padding: '24px',
+              borderRadius: '16px',
+              color: 'white',
+              boxShadow: '0 8px 25px rgba(245, 158, 11, 0.25)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Ordens de Serviço</h3>
+                  <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{viagensComOS.length}</p>
+                </div>
+                <FileText size={40} style={{ opacity: 0.3 }} />
+              </div>
+            </div>
+
+            {/* Card Veículos Ativos */}
+            <div style={{
+              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+              padding: '24px',
+              borderRadius: '16px',
+              color: 'white',
+              boxShadow: '0 8px 25px rgba(5, 150, 105, 0.25)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Veículos Ativos</h3>
+                  <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{veiculos.filter(v => v.status === 'ativo').length}</p>
+                </div>
+                <CheckCircle size={40} style={{ opacity: 0.3 }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Veículos em Manutenção */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            borderRadius: '16px', 
+            boxShadow: '0 4px 6px rgba(0,0,0,0.05)', 
+            padding: '24px',
+            marginBottom: '24px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
+              <Wrench style={{ marginRight: '8px' }} size={24} />
+              Veículos em Manutenção ({veiculosManutencao.length})
+            </h2>
             
-            <div class="card">
-                <div class="input-group">
-                    <label>Email</label>
-                    <input type="email" id="loginEmail" value="admin@rtdigital.com" placeholder="Digite seu email">
-                </div>
-                <div class="input-group">
-                    <label>Senha</label>
-                    <input type="password" id="loginPassword" value="123456" placeholder="Digite sua senha">
-                </div>
-                <button class="btn btn-primary" onclick="login()">Entrar</button>
-                
-                <div style="margin-top: 20px; font-size: 12px; color: #666; text-align: center;">
-                    <strong>Perfis disponíveis:</strong><br>
-                    ADM, MOTORISTA, MANUTENCAO, GERENCIA
-                </div>
-            </div>
-
-            <div id="connectionStatus" class="alert alert-info">
-                🌐 RTdigital PWA carregado - Funciona offline!
-            </div>
-        </div>
-
-        <!-- Admin Home Screen -->
-        <div id="adminHomeScreen" class="screen hidden">
-            <div class="header">
-                <div style="font-size: 24px; font-weight: bold;">Olá, <span id="userName"></span></div>
-                <div class="subtitle">Painel Administrativo</div>
-            </div>
-
-            <div id="alertContainer"></div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalVehicles">5</div>
-                    <div class="stat-label">Total de Veículos</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="availableVehicles">3</div>
-                    <div class="stat-label">Disponíveis</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="totalUsers">4</div>
-                    <div class="stat-label">Usuários</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="pendingOrders">2</div>
-                    <div class="stat-label">OS Pendentes</div>
-                </div>
-            </div>
-
-            <button class="btn btn-outline" onclick="logout()">Sair</button>
-        </div>
-
-        <!-- User Management Screen -->
-        <div id="userManagementScreen" class="screen hidden">
-            <div class="header">
-                <div style="font-size: 20px; font-weight: bold;">Gerenciar Usuários</div>
-            </div>
-
-            <div id="usersList"></div>
-
-            <button class="btn btn-primary" onclick="showAddUserModal()">+ Adicionar Usuário</button>
-        </div>
-
-        <!-- Vehicle Management Screen -->
-        <div id="vehicleManagementScreen" class="screen hidden">
-            <div class="header">
-                <div style="font-size: 20px; font-weight: bold;">Gerenciar Veículos</div>
-            </div>
-
-            <div id="vehiclesList"></div>
-
-            <button class="btn btn-primary" onclick="showAddVehicleModal()">+ Adicionar Veículo</button>
-        </div>
-
-        <!-- Reports Screen -->
-        <div id="reportsScreen" class="screen hidden">
-            <div class="header">
-                <div style="font-size: 20px; font-weight: bold;">Relatórios</div>
-            </div>
-
-            <div class="card">
-                <h3>Estatísticas Gerais</h3>
-                <table class="table">
-                    <tr><td>Total de Viagens</td><td id="reportTotalTrips">15</td></tr>
-                    <tr><td>Viagens Concluídas</td><td id="reportCompletedTrips">12</td></tr>
-                    <tr><td>KM Total Rodados</td><td id="reportTotalKm">2,450</td></tr>
-                    <tr><td>Média KM/Viagem</td><td id="reportAvgKm">163</td></tr>
-                </table>
-            </div>
-
-            <div class="card">
-                <h3>KM dos Veículos</h3>
-                <table class="table">
-                    <thead>
-                        <tr><th>Veículo</th><th>KM Atual</th><th>Revisão</th><th>Status</th></tr>
-                    </thead>
-                    <tbody id="vehicleKmTable"></tbody>
-                </table>
-            </div>
-
-            <button class="btn btn-success" onclick="generateExcelReport()">📊 Gerar Relatório Excel</button>
-        </div>
-
-        <!-- Driver Screens -->
-        <div id="driverHomeScreen" class="screen hidden">
-            <div class="header">
-                <div style="font-size: 24px; font-weight: bold;">Olá, <span id="driverUserName"></span></div>
-                <div class="subtitle">Motorista</div>
-            </div>
-
-            <div id="currentTripCard" class="card hidden">
-                <h3>Viagem Atual</h3>
-                <div id="currentTripInfo"></div>
-                <button class="btn btn-warning" onclick="finishCurrentTrip()">Finalizar Viagem</button>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" id="driverTotalTrips">8</div>
-                    <div class="stat-label">Total de Viagens</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="driverThisMonth">3</div>
-                    <div class="stat-label">Este Mês</div>
-                </div>
-            </div>
-
-            <button class="btn btn-primary" onclick="showScreen('newTripScreen')">🚗 Nova Viagem</button>
-            <button class="btn btn-outline" onclick="logout()">Sair</button>
-        </div>
-
-        <!-- New Trip Screen -->
-        <div id="newTripScreen" class="screen hidden">
-            <div class="step-indicator">
-                <div class="step active" id="step1">1</div>
-                <div class="step" id="step2">2</div>
-                <div class="step" id="step3">3</div>
-            </div>
-
-            <div id="tripStep1" class="trip-step">
-                <div class="header">
-                    <div style="font-size: 20px; font-weight: bold;">Nova Viagem - Dados</div>
-                </div>
-
-                <div class="card">
-                    <div class="input-group">
-                        <label>Veículo</label>
-                        <select id="tripVehicle">
-                            <option value="">Selecione um veículo</option>
-                            <option value="1">RTD-001 - Fiat Fiorino</option>
-                            <option value="3">RTD-003 - Ford Transit</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group">
-                        <label>Origem</label>
-                        <select id="tripOrigin">
-                            <option value="">Selecione a origem</option>
-                            <option value="1">São Paulo - SP</option>
-                            <option value="2">Rio de Janeiro - RJ</option>
-                            <option value="3">Belo Horizonte - MG</option>
-                            <option value="4">Conselheiro Lafaiete - MG</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group">
-                        <label>Destino</label>
-                        <select id="tripDestination">
-                            <option value="">Selecione o destino</option>
-                            <option value="1">São Paulo - SP</option>
-                            <option value="2">Rio de Janeiro - RJ</option>
-                            <option value="3">Belo Horizonte - MG</option>
-                            <option value="4">Conselheiro Lafaiete - MG</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group">
-                        <label>KM Inicial</label>
-                        <input type="number" id="tripKmInitial" placeholder="Digite o KM inicial">
-                    </div>
-
-                    <button class="btn btn-primary" onclick="nextTripStep()">Próximo: Check-in</button>
-                </div>
-            </div>
-
-            <div id="tripStep2" class="trip-step hidden">
-                <div class="header">
-                    <div style="font-size: 20px; font-weight: bold;">Check-in do Veículo</div>
-                </div>
-
-                <div id="checkInItems"></div>
-
-                <button class="btn btn-primary" onclick="nextTripStep()">Finalizar Check-in</button>
-            </div>
-
-            <div id="tripStep3" class="trip-step hidden">
-                <div class="header">
-                    <div style="font-size: 20px; font-weight: bold;">Confirmação</div>
-                </div>
-
-                <div class="card">
-                    <div class="success-check">✅</div>
-                    <h3 style="text-align: center;">Viagem Iniciada!</h3>
-                    <div id="tripSummary"></div>
-                    <div id="nonConformAlert" class="alert alert-warning hidden"></div>
-                </div>
-
-                <button class="btn btn-success" onclick="confirmTrip()">🏁 Boa Viagem!</button>
-            </div>
-
-            <button class="btn btn-outline" onclick="showScreen('driverHomeScreen')">Voltar</button>
-        </div>
-
-        <!-- Maintenance Screens -->
-        <div id="maintenanceHomeScreen" class="screen hidden">
-            <div class="header">
-                <div style="font-size: 24px; font-weight: bold;">Olá, <span id="maintenanceUserName"></span></div>
-                <div class="subtitle">Equipe de Manutenção</div>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" id="pendingMaintenanceOrders">3</div>
-                    <div class="stat-label">OS Pendentes</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="inProgressOrders">1</div>
-                    <div class="stat-label">Em Andamento</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="vehiclesInMaintenance">2</div>
-                    <div class="stat-label">Veículos em Manutenção</div>
-                </div>
-            </div>
-
-            <button class="btn btn-primary" onclick="showScreen('serviceOrdersScreen')">🔧 Ver Ordens de Serviço</button>
-            <button class="btn btn-outline" onclick="logout()">Sair</button>
-        </div>
-
-        <!-- Service Orders Screen -->
-        <div id="serviceOrdersScreen" class="screen hidden">
-            <div class="header">
-                <div style="font-size: 20px; font-weight: bold;">Ordens de Serviço</div>
-            </div>
-
-            <div class="card">
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <button class="btn btn-primary" onclick="filterServiceOrders('PENDENTE')" style="width: auto; padding: 8px 12px; font-size: 12px;">Pendentes</button>
-                    <button class="btn btn-secondary" onclick="filterServiceOrders('EM_ANDAMENTO')" style="width: auto; padding: 8px 12px; font-size: 12px;">Em Andamento</button>
-                    <button class="btn btn-outline" onclick="filterServiceOrders('CONCLUIDA')" style="width: auto; padding: 8px 12px; font-size: 12px;">Concluídas</button>
-                </div>
-
-                <div id="serviceOrdersList"></div>
-            </div>
-
-            <button class="btn btn-outline" onclick="showScreen('maintenanceHomeScreen')">Voltar</button>
-        </div>
-
-        <!-- Manager Screen -->
-        <div id="managerHomeScreen" class="screen hidden">
-            <div class="header">
-                <div style="font-size: 24px; font-weight: bold;">Olá, <span id="managerUserName"></span></div>
-                <div class="subtitle">Gerência</div>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" id="managerTripsMonth">12</div>
-                    <div class="stat-label">Viagens Este Mês</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="managerActiveDrivers">3</div>
-                    <div class="stat-label">Motoristas Ativos</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="managerKmMonth">1,680</div>
-                    <div class="stat-label">KM Este Mês</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="managerPendingOS">2</div>
-                    <div class="stat-label">OS Pendentes</div>
-                </div>
-            </div>
-
-            <button class="btn btn-primary" onclick="showScreen('reportsScreen')">📊 Ver Relatórios</button>
-            <button class="btn btn-outline" onclick="logout()">Sair</button>
-        </div>
-
-        <!-- Navigation (only for admin) -->
-        <div id="adminNavigation" class="navigation hidden">
-            <div class="nav-item" onclick="showScreen('adminHomeScreen')">🏠 Home</div>
-            <div class="nav-item" onclick="showScreen('userManagementScreen')">👥 Usuários</div>
-            <div class="nav-item" onclick="showScreen('vehicleManagementScreen')">🚗 Veículos</div>
-            <div class="nav-item" onclick="showScreen('reportsScreen')">📊 Relatórios</div>
-        </div>
-
-        <!-- Modals (same as before) -->
-        <div id="addUserModal" class="modal hidden">
-            <div class="modal-content">
-                <h3>Novo Usuário</h3>
-                <div class="input-group">
-                    <label>Nome</label>
-                    <input type="text" id="newUserName" placeholder="Nome completo">
-                </div>
-                <div class="input-group">
-                    <label>Email</label>
-                    <input type="email" id="newUserEmail" placeholder="email@exemplo.com">
-                </div>
-                <div class="input-group">
-                    <label>Senha</label>
-                    <input type="password" id="newUserPassword" placeholder="Senha">
-                </div>
-                <div class="input-group">
-                    <label>Perfil</label>
-                    <select id="newUserProfile">
-                        <option value="MOTORISTA">Motorista</option>
-                        <option value="MANUTENCAO">Manutenção</option>
-                        <option value="GERENCIA">Gerência</option>
-                        <option value="ADM">Administrador</option>
-                    </select>
-                </div>
-                <button class="btn btn-primary" onclick="addUser()">Salvar</button>
-                <button class="btn btn-outline" onclick="hideModal('addUserModal')">Cancelar</button>
-            </div>
-        </div>
-
-        <div id="addVehicleModal" class="modal hidden">
-            <div class="modal-content">
-                <h3>Novo Veículo</h3>
-                <div class="input-group">
-                    <label>Prefixo</label>
-                    <input type="text" id="newVehiclePrefix" placeholder="RTD-004">
-                </div>
-                <div class="input-group">
-                    <label>Modelo</label>
-                    <input type="text" id="newVehicleModel" placeholder="Fiat Strada">
-                </div>
-                <div class="input-group">
-                    <label>Placa</label>
-                    <input type="text" id="newVehiclePlate" placeholder="ABC-1234">
-                </div>
-                <div class="input-group">
-                    <label>Ano</label>
-                    <input type="number" id="newVehicleYear" placeholder="2022">
-                </div>
-                <div class="input-group">
-                    <label>KM para Revisão</label>
-                    <input type="number" id="newVehicleRevision" placeholder="10000">
-                </div>
-                <button class="btn btn-primary" onclick="addVehicle()">Salvar</button>
-                <button class="btn btn-outline" onclick="hideModal('addVehicleModal')">Cancelar</button>
-            </div>
-        </div>
-
-        <div id="finishTripModal" class="modal hidden">
-            <div class="modal-content">
-                <h3>Finalizar Viagem</h3>
-                <div class="input-group">
-                    <label>KM Final</label>
-                    <input type="number" id="tripKmFinal" placeholder="Digite o KM final">
-                </div>
-                <div class="input-group">
-                    <label>Problemas na Viagem (opcional)</label>
-                    <textarea id="tripProblems" placeholder="Descreva problemas encontrados"></textarea>
-                </div>
-                <button class="btn btn-success" onclick="confirmFinishTrip()">Finalizar</button>
-                <button class="btn btn-outline" onclick="hideModal('finishTripModal')">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // PWA Variables
-        let deferredPrompt;
-        let isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-
-        // Dados mockados (mesmo do anterior)
-        let currentUser = null;
-        let currentTripStep = 1;
-        let currentTrip = null;
-
-        const users = [
-            { id: 1, name: 'Administrador', email: 'admin@rtdigital.com', password: '123456', profile: 'ADM' },
-            { id: 2, name: 'João Silva', email: 'joao@rtdigital.com', password: '123456', profile: 'MOTORISTA' },
-            { id: 3, name: 'Pedro Manutenção', email: 'pedro@rtdigital.com', password: '123456', profile: 'MANUTENCAO' },
-            { id: 4, name: 'Maria Gerente', email: 'maria@rtdigital.com', password: '123456', profile: 'GERENCIA' }
-        ];
-
-        const vehicles = [
-            { id: 1, prefix: 'RTD-001', model: 'Fiat Fiorino', plate: 'ABC-1234', year: 2020, kmCurrent: 15000, kmRevision: 20000, status: 'DISPONIVEL' },
-            { id: 2, prefix: 'RTD-002', model: 'VW Saveiro', plate: 'DEF-5678', year: 2021, kmCurrent: 25000, kmRevision: 25000, status: 'MANUTENCAO' },
-            { id: 3, prefix: 'RTD-003', model: 'Ford Transit', plate: 'GHI-9012', year: 2019, kmCurrent: 8000, kmRevision: 15000, status: 'DISPONIVEL' },
-            { id: 4, prefix: 'RTD-004', model: 'Renault Master', plate: 'JKL-3456', year: 2022, kmCurrent: 31000, kmRevision: 30000, status: 'DISPONIVEL' },
-            { id: 5, prefix: 'RTD-005', model: 'Iveco Daily', plate: 'MNO-7890', year: 2020, kmCurrent: 18000, kmRevision: 25000, status: 'EM_USO' }
-        ];
-
-        const serviceOrders = [
-            { id: 1, vehicleId: 2, description: 'Revisão dos 25.000 km', priority: 'ALTA', status: 'PENDENTE', createdAt: '2024-01-15' },
-            { id: 2, vehicleId: 4, description: 'Check-in não conforme: Pressão dos pneus', priority: 'NORMAL', status: 'PENDENTE', createdAt: '2024-01-16' },
-            { id: 3, vehicleId: 1, description: 'Problema relatado: Barulho no motor', priority: 'ALTA', status: 'EM_ANDAMENTO', createdAt: '2024-01-14' }
-        ];
-
-        const checkInItems = [
-            { id: 1, description: 'Nível de óleo do motor' },
-            { id: 2, description: 'Pressão dos pneus' },
-            { id: 3, description: 'Funcionamento dos faróis' },
-            { id: 4, description: 'Funcionamento das lanternas' },
-            { id: 5, description: 'Documentação do veículo' }
-        ];
-
-        // PWA Installation
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            if (!isStandalone) {
-                setTimeout(() => {
-                    document.getElementById('installPrompt').classList.remove('hidden');
-                }, 3000);
-            }
-        });
-
-        function installPWA() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        showAlert('RTdigital instalado com sucesso!', 'success');
-                    }
-                    deferredPrompt = null;
-                    document.getElementById('installPrompt').classList.add('hidden');
-                });
-            }
-        }
-
-        function dismissInstall() {
-            document.getElementById('installPrompt').classList.add('hidden');
-            localStorage.setItem('installDismissed', 'true');
-        }
-
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register(`data:application/javascript;base64,${btoa(`
-                const CACHE_NAME = 'rtdigital-v1';
-                const urlsToCache = ['/'];
-
-                self.addEventListener('install', event => {
-                    event.waitUntil(
-                        caches.open(CACHE_NAME)
-                            .then(cache => cache.addAll(urlsToCache))
-                    );
-                });
-
-                self.addEventListener('fetch', event => {
-                    event.respondWith(
-                        caches.match(event.request)
-                            .then(response => {
-                                if (response) {
-                                    return response;
-                                }
-                                return fetch(event.request);
-                            })
-                    );
-                });
-
-                self.addEventListener('message', event => {
-                    if (event.data && event.data.type === 'SYNC_DATA') {
-                        // Sincronizar dados quando online
-                        console.log('Sincronizando dados...', event.data.payload);
-                    }
-                });
-            `)}`).then(() => {
-                console.log('RTdigital Service Worker registrado com sucesso');
-            }).catch(error => {
-                console.log('Erro ao registrar Service Worker:', error);
-            });
-        }
-
-        // Connection Status
-        function updateConnectionStatus() {
-            const offlineIndicator = document.getElementById('offlineIndicator');
-            const connectionStatus = document.getElementById('connectionStatus');
-            
-            if (navigator.onLine) {
-                offlineIndicator.classList.add('hidden');
-                if (connectionStatus) {
-                    connectionStatus.className = 'alert alert-info';
-                    connectionStatus.innerHTML = '🌐 RTdigital PWA carregado - Funciona offline!';
-                }
-                
-                // Sync data when back online
-                syncOfflineData();
-            } else {
-                offlineIndicator.classList.remove('hidden');
-                if (connectionStatus) {
-                    connectionStatus.className = 'alert alert-warning';
-                    connectionStatus.innerHTML = '📴 Modo Offline - Dados salvos localmente';
-                }
-            }
-        }
-
-        window.addEventListener('online', updateConnectionStatus);
-        window.addEventListener('offline', updateConnectionStatus);
-
-        // Local Storage for offline functionality
-        function saveToLocal(key, data) {
-            try {
-                localStorage.setItem(`rtdigital_${key}`, JSON.stringify({
-                    data: data,
-                    timestamp: Date.now(),
-                    synced: navigator.onLine
-                }));
-            } catch (error) {
-                console.log('Erro ao salvar dados localmente:', error);
-            }
-        }
-
-        function loadFromLocal(key) {
-            try {
-                const stored = localStorage.getItem(`rtdigital_${key}`);
-                return stored ? JSON.parse(stored) : null;
-            } catch (error) {
-                console.log('Erro ao carregar dados locais:', error);
-                return null;
-            }
-        }
-
-        function syncOfflineData() {
-            // Simular sincronização de dados offline
-            const unsyncedData = [];
-            
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith('rtdigital_') && key.includes('_pending')) {
-                    const data = loadFromLocal(key.replace('rtdigital_', ''));
-                    if (data && !data.synced) {
-                        unsyncedData.push(data);
-                    }
-                }
-            }
-
-            if (unsyncedData.length > 0) {
-                console.log(`Sincronizando ${unsyncedData.length} itens...`);
-                // Aqui você enviaria os dados para o servidor
-                
-                // Marcar como sincronizado
-                unsyncedData.forEach((item, index) => {
-                    setTimeout(() => {
-                        console.log('Item sincronizado:', item);
-                    }, index * 100);
-                });
-            }
-        }
-
-        // Notification API for PWA
-        function requestNotificationPermission() {
-            if ('Notification' in window && 'serviceWorker' in navigator) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        console.log('Permissão para notificações concedida');
-                    }
-                });
-            }
-        }
-
-        function showNotification(title, body, icon = '/icon-192.png') {
-            if ('Notification' in window && Notification.permission === 'granted') {
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.ready.then(registration => {
-                        registration.showNotification(title, {
-                            body: body,
-                            icon: icon,
-                            badge: icon,
-                            tag: 'rtdigital-notification',
-                            requireInteraction: false,
-                            actions: [
-                                {
-                                    action: 'view',
-                                    title: 'Ver'
-                                }
-                            ]
-                        });
+            {veiculosManutencao.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <CheckCircle size={48} style={{ color: '#059669', marginBottom: '16px' }} />
+                <p style={{ fontSize: '16px' }}>Nenhum veículo em manutenção no momento.</p>
+                <p style={{ fontSize: '14px' }}>Todos os veículos estão em perfeitas condições!</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {veiculosManutencao.map(veiculo => {
+                  const viagensVeiculo = viagens.filter(v => v.prefixo === veiculo.prefixo);
+                  const problemasVeiculo = viagensVeiculo.reduce((acc, viagem) => {
+                    const itensNaoResolvidos = viagem.itensNaoConformes?.filter(item => !item.resolvido) || [];
+                    itensNaoResolvidos.forEach(item => {
+                      acc.push({
+                        tipo: 'checklist',
+                        viagemId: viagem.id,
+                        itemId: item.id,
+                        descricao: `${item.item}: ${item.observacao}`,
+                        data: viagem.dataHora,
+                        motorista: viagem.motorista
+                      });
                     });
-                } else {
-                    new Notification(title, {
-                        body: body,
-                        icon: icon
-                    });
-                }
-            }
-        }
+                    
+                    if (viagem.ordemServico && viagem.ordemServico.trim() && viagem.statusManutencao !== 'resolvida') {
+                      acc.push({
+                        tipo: 'os',
+                        viagemId: viagem.id,
+                        descricao: viagem.ordemServico,
+                        data: viagem.dataHora,
+                        motorista: viagem.motorista
+                      });
+                    }
+                    
+                    return acc;
+                  }, []);
+                  
+                  return (
+                    <div key={veiculo.id} style={{ 
+                      padding: '20px', 
+                      backgroundColor: '#fef2f2', 
+                      borderRadius: '12px',
+                      border: '2px solid #fecaca'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <div>
+                          <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: '#991b1b' }}>
+                            Veículo {veiculo.prefixo}
+                          </h3>
+                          <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#6b7280' }}>
+                            {veiculo.placa} - {veiculo.modelo}
+                          </p>
+                          <span style={{ 
+                            fontSize: '12px', 
+                            backgroundColor: '#fee2e2', 
+                            color: '#991b1b', 
+                            padding: '4px 8px', 
+                            borderRadius: '12px',
+                            fontWeight: '500'
+                          }}>
+                            {problemasVeiculo.length} problema(s) pendente(s)
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => liberarVeiculo(veiculo.id)}
+                          style={{
+                            ...buttonStyle,
+                            background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                            padding: '8px 16px',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            width: 'auto'
+                          }}
+                        >
+                          <CheckCircle size={16} />
+                          Liberar Veículo
+                        </button>
+                      </div>
+                      
+                      {problemasVeiculo.length > 0 && (
+                        <div>
+                          <h4 style={{ fontSize: '14px', color: '#991b1b', marginBottom: '12px', fontWeight: '600' }}>
+                            Problemas a serem resolvidos:
+                          </h4>
+                          {problemasVeiculo.map((problema, idx) => (
+                            <div key={idx} style={{ 
+                              marginBottom: '12px', 
+                              padding: '16px', 
+                              backgroundColor: '#fee2e2', 
+                              borderRadius: '8px',
+                              border: '1px solid #fecaca'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <span style={{ 
+                                      fontSize: '12px', 
+                                      backgroundColor: '#991b1b', 
+                                      color: 'white', 
+                                      padding: '2px 8px', 
+                                      borderRadius: '12px',
+                                      fontWeight: '500'
+                                    }}>
+                                      {problema.tipo === 'checklist' ? 'CHECKLIST' : 'ORDEM DE SERVIÇO'}
+                                    </span>
+                                    <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                                      {problema.data}
+                                    </span>
+                                  </div>
+                                  <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#991b1b', fontWeight: '500' }}>
+                                    {problema.descricao}
+                                  </p>
+                                  <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>
+                                    Motorista: {problema.motorista}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    if (problema.tipo === 'checklist') {
+                                      resolverItemChecklist(problema.viagemId, problema.itemId);
+                                    } else {
+                                      processarOS(problema.viagemId);
+                                    }
+                                  }}
+                                  style={{
+                                    ...buttonStyle,
+                                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                                    padding: '6px 12px',
+                                    fontSize: '12px',
+                                    marginLeft: '12px',
+                                    width: 'auto'
+                                  }}
+                                >
+                                  ✅ Resolver
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-        // Enhanced functions with offline support
-        function login() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-
-            const user = users.find(u => u.email === email && u.password === password);
+          {/* Ordens de Serviço Pendentes */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            borderRadius: '16px', 
+            boxShadow: '0 4px 6px rgba(0,0,0,0.05)', 
+            padding: '24px'
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
+              <FileText style={{ marginRight: '8px' }} size={24} />
+              Ordens de Serviço Pendentes ({viagensComOS.length})
+            </h2>
             
-            if (user) {
-                currentUser = user;
-                saveToLocal('currentUser', user);
-                showUserScreen();
-                showAlert('Login realizado com sucesso!', 'success');
-                
-                // Request notification permission on first login
-                if (!localStorage.getItem('notificationRequested')) {
-                    requestNotificationPermission();
-                    localStorage.setItem('notificationRequested', 'true');
-                }
-            } else {
-                showAlert('Email ou senha inválidos!', 'error');
-            }
-        }
+            {viagensComOS.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <CheckCircle size={48} style={{ color: '#059669', marginBottom: '16px' }} />
+                <p style={{ fontSize: '16px' }}>Nenhuma ordem de serviço pendente.</p>
+                <p style={{ fontSize: '14px' }}>Todos os serviços foram processados!</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {viagensComOS.map(viagem => (
+                  <div key={viagem.id} style={{ 
+                    padding: '20px', 
+                    backgroundColor: '#fffbeb', 
+                    borderRadius: '12px',
+                    border: '2px solid #fed7aa'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <div>
+                        <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: '#92400e' }}>
+                          Veículo {viagem.prefixo}
+                        </h3>
+                        <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#6b7280' }}>
+                          {viagem.dataHora} | Motorista: {viagem.motorista}
+                        </p>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
+                          Rota: {viagem.origem} → {viagem.destino}
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => colocarEmManutencao(viagem.prefixo)}
+                          style={{
+                            ...buttonDangerStyle,
+                            fontSize: '12px',
+                            padding: '6px 12px'
+                          }}
+                        >
+                          Colocar em Manutenção
+                        </button>
+                        <button
+                          onClick={() => processarOS(viagem.id)}
+                          style={{
+                            ...buttonStyle,
+                            background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            width: 'auto'
+                          }}
+                        >
+                          Processar OS
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div style={{ 
+                      padding: '16px', 
+                      backgroundColor: '#fef3c7', 
+                      borderRadius: '8px',
+                      borderLeft: '4px solid #f59e0b'
+                    }}>
+                      <h4 style={{ margin: '0 0 8px 0', color: '#92400e', fontSize: '14px', fontWeight: '600' }}>
+                        Ordem de Serviço:
+                      </h4>
+                      <p style={{ margin: 0, color: '#92400e', fontSize: '14px' }}>
+                        {viagem.ordemServico}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('rtdigital_currentUser');
-            showScreen('loginScreen');
-            hideNavigation();
-        }
+  // DASHBOARD GERÊNCIA
+  if (usuario.tela === 'dashboard-gerencia') {
+    const motoristasAtivos = usuarios.filter(u => u.tipo === 'motorista' && u.status === 'ativo');
+    const viagensComProblemas = viagens.filter(v => v.temProblemas);
+    const totalKm = viagens.reduce((total, viagem) => total + viagem.kmPercorridos, 0);
+    const veiculosManutencao = veiculos.filter(v => v.status === 'manutencao');
+    const problemasAtivos = viagens.reduce((total, viagem) => {
+      const itensNaoResolvidos = viagem.itensNaoConformes?.filter(item => !item.resolvido)?.length || 0;
+      const osNaoResolvida = (viagem.ordemServico && viagem.ordemServico.trim() && viagem.statusManutencao !== 'resolvida') ? 1 : 0;
+      return total + itensNaoResolvidos + osNaoResolvida;
+    }, 0);
 
-        function addUser() {
-            const name = document.getElementById('newUserName').value;
-            const email = document.getElementById('newUserEmail').value;
-            const password = document.getElementById('newUserPassword').value;
-            const profile = document.getElementById('newUserProfile').value;
+    // Cálculos de performance
+    const mediaKmPorViagem = viagens.length > 0 ? (totalKm / viagens.length).toFixed(1) : 0;
+    const percentualProblemas = viagens.length > 0 ? ((viagensComProblemas.length / viagens.length) * 100).toFixed(1) : 0;
+    const disponibilidadeFrota = veiculos.length > 0 ? (((veiculos.length - veiculosManutencao.length) / veiculos.length) * 100).toFixed(1) : 100;
 
-            if (!name || !email || !password) {
-                showAlert('Preencha todos os campos!', 'error');
-                return;
-            }
-
-            const newUser = {
-                id: users.length + 1,
-                name,
-                email,
-                password,
-                profile
-            };
-
-            users.push(newUser);
-            saveToLocal('users', users);
-            
-            hideModal('addUserModal');
-            loadUsers();
-            updateAdminStats();
-            showAlert('Usuário adicionado com sucesso!', 'success');
-            
-            // Show notification if supported
-            showNotification('Novo Usuário', `${name} foi adicionado como ${profile}`);
-
-            // Clear form
-            document.getElementById('newUserName').value = '';
-            document.getElementById('newUserEmail').value = '';
-            document.getElementById('newUserPassword').value = '';
-        }
-
-        function addVehicle() {
-            const prefix = document.getElementById('newVehiclePrefix').value;
-            const model = document.getElementById('newVehicleModel').value;
-            const plate = document.getElementById('newVehiclePlate').value;
-            const year = document.getElementById('newVehicleYear').value;
-            const revision = document.getElementById('newVehicleRevision').value;
-
-            if (!prefix || !model || !plate || !revision) {
-                showAlert('Preencha todos os campos obrigatórios!', 'error');
-                return;
-            }
-
-            const newVehicle = {
-                id: vehicles.length + 1,
-                prefix,
-                model,
-                plate,
-                year: parseInt(year) || null,
-                kmCurrent: 0,
-                kmRevision: parseInt(revision),
-                status: 'DISPONIVEL'
-            };
-
-            vehicles.push(newVehicle);
-            saveToLocal('vehicles', vehicles);
-            
-            hideModal('addVehicleModal');
-            loadVehicles();
-            updateAdminStats();
-            showAlert('Veículo adicionado com sucesso!', 'success');
-            
-            // Show notification
-            showNotification('Novo Veículo', `${prefix} - ${model} foi adicionado à frota`);
-
-            // Clear form
-            document.getElementById('newVehiclePrefix').value = '';
-            document.getElementById('newVehicleModel').value = '';
-            document.getElementById('newVehiclePlate').value = '';
-            document.getElementById('newVehicleYear').value = '';
-            document.getElementById('newVehicleRevision').value = '';
-        }
-
-        // All other functions remain the same as the previous version
-        // (showScreen, updateAdminStats, loadUsers, loadVehicles, etc.)
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#f8fafc',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+      }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+          padding: '24px',
+          color: 'white'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            maxWidth: '1200px',
+            margin: '0 auto'
+          }}>
+            <div>
+              <h1 style={{ fontSize: '32px', fontWeight: '700', margin: '0 0 8px 0' }}>
+                Painel Gerencial
+              </h1>
+              <p style={{ fontSize: '18px', margin: 0, opacity: 0.9 }}>
+                Olá, {usuario.nome}! Acompanhe os indicadores da operação.
+              </p>
+            </div>
+            <button
+              onClick={logout}
+              style={{
+                ...buttonDangerStyle,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <LogOut size={18} />
+              Sair
+            </button>
+          </div>
+        </div>
         
-        // Copy all the existing functions from the previous version here...
-        // [Previous functions would be copied here to maintain full functionality]
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px' }}>
+          {/* KPIs Principais */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '24px',
+            marginBottom: '32px'
+          }}>
+            {/* Total de Viagens */}
+            <div style={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              padding: '24px',
+              borderRadius: '16px',
+              color: 'white',
+              boxShadow: '0 8px 25px rgba(59, 130, 246, 0.25)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: 0.9 }}>Total de Viagens</h3>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '28px', fontWeight: 'bold' }}>{viagens.length}</p>
+                  <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>{totalKm.toLocaleString()} km percorridos</p>
+                </div>
+                <Activity size={36} style={{ opacity: 0.3 }} />
+              </div>
+            </div>
 
-        // Initialize PWA
-        document.addEventListener('DOMContentLoaded', function() {
-            updateConnectionStatus();
+            {/* Motoristas Ativos */}
+            <div style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              padding: '24px',
+              borderRadius: '16px',
+              color: 'white',
+              boxShadow: '0 8px 25px rgba(16, 185, 129, 0.25)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: 0.9 }}>Motoristas Ativos</h3>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '28px', fontWeight: 'bold' }}>{motoristasAtivos.length}</p>
+                  <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>Equipe operacional</p>
+                </div>
+                <Users size={36} style={{ opacity: 0.3 }} />
+              </div>
+            </div>
+
+            {/* Disponibilidade da Frota */}
+            <div style={{
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+              padding: '24px',
+              borderRadius: '16px',
+              color: 'white',
+              boxShadow: '0 8px 25px rgba(139, 92, 246, 0.25)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: 0.9 }}>Disponibilidade da Frota</h3>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '28px', fontWeight: 'bold' }}>{disponibilidadeFrota}%</p>
+                  <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>{veiculos.length - veiculosManutencao.length} de {veiculos.length} ativos</p>
+                </div>
+                <Truck size={36} style={{ opacity: 0.3 }} />
+              </div>
+            </div>
+
+            {/* Taxa de Problemas */}
+            <div style={{
+              background: percentualProblemas > 20 ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              padding: '24px',
+              borderRadius: '16px',
+              color: 'white',
+              boxShadow: percentualProblemas > 20 ? '0 8px 25px rgba(239, 68, 68, 0.25)' : '0 8px 25px rgba(245, 158, 11, 0.25)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: 0.9 }}>Taxa de Problemas</h3>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '28px', fontWeight: 'bold' }}>{percentualProblemas}%</p>
+                  <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>{viagensComProblemas.length} viagens com ocorrências</p>
+                </div>
+                <AlertTriangle size={36} style={{ opacity: 0.3 }} />
+              </div>
+            </div>
+
+            {/* Média KM/Viagem */}
+            <div style={{
+              background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+              padding: '24px',
+              borderRadius: '16px',
+              color: 'white',
+              boxShadow: '0 8px 25px rgba(6, 182, 212, 0.25)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', opacity: 0.9 }}>Média KM/Viagem</h3>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '28px', fontWeight: 'bold' }}>{mediaKmPorViagem}</p>
+                  <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>Quilômetros por viagem</p>
+                </div>
+                <BarChart3 size={36} style={{ opacity: 0.3 }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Seção de Relatórios */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '24px',
+            marginBottom: '32px'
+          }}>
+            {/* Resumo Operacional */}
+            <div style={{ 
+              backgroundColor: 'white', 
+              borderRadius: '16px', 
+              boxShadow: '0 4px 6px rgba(0,0,0,0.05)', 
+              padding: '24px'
+            }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#1f2937' }}>
+                📊 Resumo Operacional
+              </h3>
+              <div style={{ display: 'grid', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
+                  <span style={{ color: '#6b7280' }}>Total de Veículos:</span>
+                  <span style={{ fontWeight: '600' }}>{veiculos.length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
+                  <span style={{ color: '#6b7280' }}>Veículos Operacionais:</span>
+                  <span style={{ fontWeight: '600', color: '#059669' }}>{veiculos.length - veiculosManutencao.length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
+                  <span style={{ color: '#6b7280' }}>Em Manutenção:</span>
+                  <span style={{ fontWeight: '600', color: '#dc2626' }}>{veiculosManutencao.length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
+                  <span style={{ color: '#6b7280' }}>Problemas Ativos:</span>
+                  <span style={{ fontWeight: '600', color: '#f59e0b' }}>{problemasAtivos}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                  <span style={{ color: '#6b7280' }}>Total de Usuários:</span>
+                  <span style={{ fontWeight: '600' }}>{usuarios.length}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Análise de Performance */}
+            <div style={{ 
+              backgroundColor: 'white', 
+              borderRadius: '16px', 
+              boxShadow: '0 4px 6px rgba(0,0,0,0.05)', 
+              padding: '24px'
+            }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#1f2937' }}>
+                📈 Análise de Performance
+              </h3>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {/* Indicador de Eficiência */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '14px', color: '#6b7280' }}>Eficiência Operacional</span>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: disponibilidadeFrota >= 80 ? '#059669' : '#dc2626' }}>
+                      {disponibilidadeFrota >= 80 ? 'Excelente' : 'Atenção Necessária'}
+                    </span>
+                  </div>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '8px', 
+                    backgroundColor: '#e5e7eb', 
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${disponibilidadeFrota}%`, 
+                      height: '100%', 
+                      backgroundColor: disponibilidadeFrota >= 80 ? '#059669' : disponibilidadeFrota >= 60 ? '#f59e0b' : '#dc2626',
+                      transition: 'width 0.3s ease'
+                    }}></div>
+                  </div>
+                </div>
+
+                {/* Indicador de Qualidade */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '14px', color: '#6b7280' }}>Qualidade das Viagens</span>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: percentualProblemas <= 10 ? '#059669' : '#dc2626' }}>
+                      {percentualProblemas <= 10 ? 'Boa' : 'Requer Melhoria'}
+                    </span>
+                  </div>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '8px', 
+                    backgroundColor: '#e5e7eb', 
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${Math.max(0, 100 - percentualProblemas)}%`, 
+                      height: '100%', 
+                      backgroundColor: percentualProblemas <= 10 ? '#059669' : percentualProblemas <= 25 ? '#f59e0b' : '#dc2626',
+                      transition: 'width 0.3s ease'
+                    }}></div>
+                  </div>
+                </div>
+
+                {/* Recomendações */}
+                <div style={{ 
+                  marginTop: '8px',
+                  padding: '12px',
+                  backgroundColor: '#f0f9ff',
+                  borderRadius: '8px',
+                  border: '1px solid #0ea5e9'
+                }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#0369a1' }}>
+                    💡 Recomendações:
+                  </h4>
+                  <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '13px', color: '#0369a1' }}>
+                    {disponibilidadeFrota < 80 && (
+                      <li>Acelerar processos de manutenção para aumentar disponibilidade</li>
+                    )}
+                    {percentualProblemas > 15 && (
+                      <li>Implementar treinamentos adicionais para motoristas</li>
+                    )}
+                    {viagens.length < 10 && (
+                      <li>Aumentar frequência de viagens para melhorar dados</li>
+                    )}
+                    {problemasAtivos > 5 && (
+                      <li>Priorizar resolução dos problemas ativos pendentes</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Histórico Recente de Viagens */}
+          <div style={{ 
+            backgroundColor: 'white', 
+            borderRadius: '16px', 
+            boxShadow: '0 4px 6px rgba(0,0,0,0.05)', 
+            padding: '24px'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#1f2937' }}>
+              🚍 Histórico Recente de Viagens
+            </h3>
             
-            // Load saved user if exists
-            const savedUser = loadFromLocal('currentUser');
-            if (savedUser && savedUser.data) {
-                currentUser = savedUser.data;
-                showUserScreen();
-            }
-            
-            // Check if install prompt was dismissed
-            if (localStorage.getItem('installDismissed') === 'true') {
-                document.getElementById('installPrompt').classList.add('hidden');
-            }
-            
-            console.log('RTdigital PWA inicializado com sucesso!');
-        });
-
-        // All existing functions from previous version...
-        function showScreen(screenId) {
-            const screens = document.querySelectorAll('.screen');
-            screens.forEach(screen => screen.classList.add('hidden'));
-            
-            document.getElementById(screenId).classList.remove('hidden');
-
-            if (screenId === 'userManagementScreen') {
-                loadUsers();
-            } else if (screenId === 'vehicleManagementScreen') {
-                loadVehicles();
-            } else if (screenId === 'reportsScreen') {
-                loadReports();
-            } else if (screenId === 'serviceOrdersScreen') {
-                loadServiceOrders();
-            }
-        }
-
-        function showNavigation() {
-            document.getElementById('adminNavigation').classList.remove('hidden');
-        }
-
-        function hideNavigation() {
-            document.getElementById('adminNavigation').classList.add('hidden');
-        }
-
-        function showAlert(message, type) {
-            alert(message);
-        }
-
-        function showUserScreen() {
-            switch (currentUser.profile) {
-                case 'ADM':
-                    showScreen('adminHomeScreen');
-                    showNavigation();
-                    document.getElementById('userName').textContent = currentUser.name;
-                    updateAdminStats();
-                    checkRevisionAlerts();
-                    break;
-                case 'MOTORISTA':
-                    showScreen('driverHomeScreen');
-                    document.getElementById('driverUserName').textContent = currentUser.name;
-                    updateDriverStats();
-                    break;
-                case 'MANUTENCAO':
-                    showScreen('maintenanceHomeScreen');
-                    document.getElementById('maintenanceUserName').textContent = currentUser.name;
-                    updateMaintenanceStats();
-                    break;
-                case 'GERENCIA':
-                    showScreen('managerHomeScreen');
-                    document.getElementById('managerUserName').textContent = currentUser.name;
-                    updateManagerStats();
-                    break;
-            }
-        }
-
-        function updateAdminStats() {
-            const availableVehicles = vehicles.filter(v => v.status === 'DISPONIVEL').length;
-            const pendingOrders = serviceOrders.filter(so => so.status === 'PENDENTE').length;
-
-            document.getElementById('totalVehicles').textContent = vehicles.length;
-            document.getElementById('availableVehicles').textContent = availableVehicles;
-            document.getElementById('totalUsers').textContent = users.length;
-            document.getElementById('pendingOrders').textContent = pendingOrders;
-        }
-
-        function checkRevisionAlerts() {
-            const vehiclesNeedingRevision = vehicles.filter(v => v.kmCurrent >= v.kmRevision);
-            const alertContainer = document.getElementById('alertContainer');
-            
-            if (vehiclesNeedingRevision.length > 0) {
-                const vehicleList = vehiclesNeedingRevision.map(v => v.prefix).join(', ');
-                alertContainer.innerHTML = \`
-                    <div class="alert alert-warning">
-                        ⚠️ <strong>Atenção:</strong> \${vehiclesNeedingRevision.length} veículo(s) precisam de revisão: \${vehicleList}
-                    </div>
-                \`;
-            } else {
-                alertContainer.innerHTML = '';
-            }
-        }
-
-        function loadUsers() {
-            const usersList = document.getElementById('usersList');
-            usersList.innerHTML = '';
-
-            users.forEach(user => {
-                const profileColors = {
-                    'ADM': '#dc3545',
-                    'GERENCIA': '#2196f3', 
-                    'MOTORISTA': '#28a745',
-                    'MANUTENCAO': '#ffc107'
-                };
-
-                usersList.innerHTML += \`
-                    <div class="user-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <strong>\${user.name}</strong><br>
-                                <small>\${user.email}</small>
-                            </div>
-                            <span class="badge" style="background: \${profileColors[user.profile]}; color: white;">
-                                \${user.profile}
-                            </span>
-                        </div>
-                    </div>
-                \`;
-            });
-        }
-
-        function loadVehicles() {
-            const vehiclesList = document.getElementById('vehiclesList');
-            vehiclesList.innerHTML = '';
-
-            vehicles.forEach(vehicle => {
-                const needsRevision = vehicle.kmCurrent >= vehicle.kmRevision;
-                const statusClass = vehicle.status === 'MANUTENCAO' ? 'maintenance' : 
-                                   vehicle.status === 'INDISPONIVEL' ? 'unavailable' : '';
-
-                vehiclesList.innerHTML += \`
-                    <div class="vehicle-item \${statusClass}">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <strong>\${vehicle.prefix}</strong> - \${vehicle.model}<br>
-                                <small>Placa: \${vehicle.plate} | KM: \${vehicle.kmCurrent.toLocaleString()}</small><br>
-                                <small>Revisão em: \${vehicle.kmRevision.toLocaleString()} km</small>
-                                \${needsRevision ? '<br><span style="color: #dc3545; font-weight: bold;">⚠️ Revisão necessária!</span>' : ''}
-                            </div>
-                            <span class="badge badge-\${vehicle.status === 'DISPONIVEL' ? 'success' : vehicle.status === 'MANUTENCAO' ? 'warning' : 'danger'}">
-                                \${vehicle.status}
-                            </span>
-                        </div>
-                    </div>
-                \`;
-            });
-        }
-
-        function loadReports() {
-            const vehicleKmTable = document.getElementById('vehicleKmTable');
-            vehicleKmTable.innerHTML = '';
-
-            vehicles.forEach(vehicle => {
-                const needsRevision = vehicle.kmCurrent >= vehicle.kmRevision;
-                vehicleKmTable.innerHTML += \`
-                    <tr>
-                        <td>\${vehicle.prefix}</td>
-                        <td>\${vehicle.kmCurrent.toLocaleString()}</td>
-                        <td>\${vehicle.kmRevision.toLocaleString()}</td>
-                        <td>
-                            <span class="badge badge-\${needsRevision ? 'danger' : 'success'}">
-                                \${needsRevision ? 'Revisão necessária' : 'OK'}
-                            </span>
-                        </td>
+            {viagens.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <Activity size={48} style={{ color: '#d1d5db', marginBottom: '16px' }} />
+                <p style={{ fontSize: '16px' }}>Nenhuma viagem registrada ainda.</p>
+                <p style={{ fontSize: '14px' }}>Os dados aparecerão aqui quando as viagens forem realizadas.</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f9fafb' }}>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #e5e7eb', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Data/Hora</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #e5e7eb', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Motorista</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #e5e7eb', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Rota</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #e5e7eb', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Veículo</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #e5e7eb', fontSize: '14px', fontWeight: '600', color: '#374151' }}>KM</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: '2px solid #e5e7eb', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Status</th>
                     </tr>
-                \`;
-            });
-        }
-
-        function updateDriverStats() {
-            document.getElementById('driverTotalTrips').textContent = '8';
-            document.getElementById('driverThisMonth').textContent = '3';
-        }
-
-        function updateMaintenanceStats() {
-            const pending = serviceOrders.filter(so => so.status === 'PENDENTE').length;
-            const inProgress = serviceOrders.filter(so => so.status === 'EM_ANDAMENTO').length;
-            const vehiclesInMaintenance = vehicles.filter(v => v.status === 'MANUTENCAO').length;
-
-            document.getElementById('pendingMaintenanceOrders').textContent = pending;
-            document.getElementById('inProgressOrders').textContent = inProgress;
-            document.getElementById('vehiclesInMaintenance').textContent = vehiclesInMaintenance;
-        }
-
-        function updateManagerStats() {
-            document.getElementById('managerTripsMonth').textContent = '12';
-            document.getElementById('managerActiveDrivers').textContent = users.filter(u => u.profile === 'MOTORISTA').length;
-            document.getElementById('managerKmMonth').textContent = '1,680';
-            document.getElementById('managerPendingOS').textContent = serviceOrders.filter(so => so.status === 'PENDENTE').length;
-        }
-
-        function loadServiceOrders(filter = 'PENDENTE') {
-            const filteredOrders = serviceOrders.filter(so => so.status === filter);
-            const ordersList = document.getElementById('serviceOrdersList');
-            ordersList.innerHTML = '';
-
-            filteredOrders.forEach(order => {
-                const vehicle = vehicles.find(v => v.id === order.vehicleId);
-                const priorityColors = {
-                    'BAIXA': '#28a745',
-                    'NORMAL': '#2196f3',
-                    'ALTA': '#ffc107',
-                    'URGENTE': '#dc3545'
-                };
-
-                ordersList.innerHTML += \`
-                    <div class="card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <strong>OS #\${order.id}</strong>
-                            <span class="badge" style="background: \${priorityColors[order.priority]}; color: white;">
-                                \${order.priority}
-                            </span>
-                        </div>
-                        <p><strong>Veículo:</strong> \${vehicle.prefix}</p>
-                        <p><strong>Descrição:</strong> \${order.description}</p>
-                        <p><small>Criada em: \${order.createdAt}</small></p>
-                        \${order.status === 'PENDENTE' ? 
-                            '<button class="btn btn-primary" onclick="startServiceOrder(' + order.id + ')">Iniciar</button>' :
-                            order.status === 'EM_ANDAMENTO' ?
-                            '<button class="btn btn-success" onclick="completeServiceOrder(' + order.id + ')">Concluir</button>' :
-                            ''
-                        }
-                    </div>
-                \`;
-            });
-        }
-
-        function filterServiceOrders(status) {
-            loadServiceOrders(status);
-        }
-
-        function startServiceOrder(orderId) {
-            const order = serviceOrders.find(so => so.id === orderId);
-            if (order) {
-                order.status = 'EM_ANDAMENTO';
-                saveToLocal('serviceOrders', serviceOrders);
-                loadServiceOrders('EM_ANDAMENTO');
-                showAlert('Ordem de serviço iniciada!', 'success');
-            }
-        }
-
-        function completeServiceOrder(orderId) {
-            const order = serviceOrders.find(so => so.id === orderId);
-            if (order) {
-                order.status = 'CONCLUIDA';
-                
-                const vehicle = vehicles.find(v => v.id === order.vehicleId);
-                if (vehicle && vehicle.status === 'MANUTENCAO') {
-                    vehicle.status = 'DISPONIVEL';
-                }
-                
-                saveToLocal('serviceOrders', serviceOrders);
-                saveToLocal('vehicles', vehicles);
-                loadServiceOrders('CONCLUIDA');
-                showAlert('Ordem de serviço concluída! Veículo liberado.', 'success');
-            }
-        }
-
-        function nextTripStep() {
-            if (currentTripStep === 1) {
-                const vehicle = document.getElementById('tripVehicle').value;
-                const origin = document.getElementById('tripOrigin').value;
-                const destination = document.getElementById('tripDestination').value;
-                const kmInitial = document.getElementById('tripKmInitial').value;
-
-                if (!vehicle || !origin || !destination || !kmInitial) {
-                    showAlert('Preencha todos os campos!', 'error');
-                    return;
-                }
-
-                if (origin === destination) {
-                    showAlert('Origem e destino devem ser diferentes!', 'error');
-                    return;
-                }
-
-                currentTripStep = 2;
-                document.getElementById('tripStep1').classList.add('hidden');
-                document.getElementById('tripStep2').classList.remove('hidden');
-                document.getElementById('step1').classList.remove('active');
-                document.getElementById('step1').classList.add('completed');
-                document.getElementById('step2').classList.add('active');
-                
-                loadCheckInItems();
-
-            } else if (currentTripStep === 2) {
-                currentTripStep = 3;
-                document.getElementById('tripStep2').classList.add('hidden');
-                document.getElementById('tripStep3').classList.remove('hidden');
-                document.getElementById('step2').classList.remove('active');
-                document.getElementById('step2').classList.add('completed');
-                document.getElementById('step3').classList.add('active');
-                
-                showTripSummary();
-            }
-        }
-
-        function loadCheckInItems() {
-            const checkInContainer = document.getElementById('checkInItems');
-            checkInContainer.innerHTML = '';
-
-            checkInItems.forEach(item => {
-                checkInContainer.innerHTML += \`
-                    <div class="card">
-                        <h4>\${item.description}</h4>
-                        <div class="checkbox-group">
-                            <div class="checkbox-item">
-                                <input type="radio" name="item_\${item.id}" value="CONFORME" checked>
-                                <label>✅ Conforme</label>
+                  </thead>
+                  <tbody>
+                    {viagens.slice(-10).reverse().map((viagem, index) => (
+                      <tr key={viagem.id} style={{ 
+                        borderBottom: '1px solid #f3f4f6',
+                        backgroundColor: index % 2 === 0 ? 'white' : '#fafafa'
+                      }}>
+                        <td style={{ padding: '12px 16px', fontSize: '14px', color: '#374151' }}>{viagem.dataHora}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '14px', color: '#374151' }}>{viagem.motorista}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '14px', color: '#374151' }}>{viagem.origem} → {viagem.destino}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '14px', color: '#374151' }}>{viagem.prefixo}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '14px', color: '#374151' }}>{viagem.kmPercorridos} km</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {viagem.temProblemas ? (
+                            <div style={{ display: 'flex', alignItems: 'center', color: '#dc2626' }}>
+                              <AlertTriangle size={16} style={{ marginRight: '6px' }} />
+                              <span style={{ fontSize: '12px', fontWeight: '500' }}>Com Ocorrências</span>
                             </div>
-                            <div class="checkbox-item">
-                                <input type="radio" name="item_\${item.id}" value="NAO_CONFORME">
-                                <label>❌ Não Conforme</label>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', color: '#059669' }}>
+                              <CheckCircle size={16} style={{ marginRight: '6px' }} />
+                              <span style={{ fontSize: '12px', fontWeight: '500' }}>Normal</span>
                             </div>
-                        </div>
-                        <div class="input-group hidden" id="obs_\${item.id}">
-                            <label>Observação</label>
-                            <textarea placeholder="Descreva o problema"></textarea>
-                        </div>
-                    </div>
-                \`;
-            });
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-            document.querySelectorAll('input[type="radio"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    const itemId = this.name.split('_')[1];
-                    const obsDiv = document.getElementById(\`obs_\${itemId}\`);
-                    if (this.value === 'NAO_CONFORME') {
-                        obsDiv.classList.remove('hidden');
-                    } else {
-                        obsDiv.classList.add('hidden');
+  // DASHBOARD ADMIN MODERNO
+  if (usuario.tela === 'dashboard-admin') {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#f8fafc',
+        display: 'flex',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+      }}>
+        {/* Sidebar */}
+        <div style={{
+          width: sidebarAberta ? '280px' : '80px',
+          backgroundColor: 'white',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+          transition: 'width 0.3s ease',
+          position: 'relative',
+          zIndex: 10
+        }}>
+          <div style={{
+            padding: '24px',
+            borderBottom: '1px solid #e5e7eb'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Truck style={{ width: '24px', height: '24px', color: 'white' }} />
+              </div>
+              {sidebarAberta && (
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Admin Panel</h3>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>Controle Total</p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div style={{ padding: '16px' }}>
+            <button
+              onClick={() => setSidebarAberta(!sidebarAberta)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: 'none',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#6b7280',
+                fontSize: '14px'
+              }}
+            >
+              <Menu size={20} />
+              {sidebarAberta && <span>Recolher Menu</span>}
+            </button>
+          </div>
+        </div>
+
+        {/* Conteúdo Principal */}
+        <div style={{ flex: 1, padding: '24px' }}>
+          {/* Header */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '32px'
+          }}>
+            <div>
+              <h1 style={{ 
+                fontSize: '32px', 
+                fontWeight: '700', 
+                color: '#1f2937',
+                margin: '0 0 8px 0'
+              }}>
+                Dashboard Administrativo
+              </h1>
+              <p style={{ 
+                color: '#6b7280', 
+                fontSize: '16px',
+                margin: 0
+              }}>
+                Visão geral do sistema e controle de operações
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                backgroundColor: 'white',
+                borderRadius: '12px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+              }}>
+                <User size={20} style={{ color: '#667eea' }} />
+                <span style={{ fontWeight: '500' }}>Olá, {usuario.nome}</span>
+              </div>
+              <button
+                onClick={logout}
+                style={{
+                  ...buttonDangerStyle,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <LogOut size={18} />
+                Sair
+              </button>
+            </div>
+          </div>
+
+          {/* Cards de Estatísticas */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '24px',
+            marginBottom: '32px'
+          }}>
+            {/* Card Usuários */}
+            <div 
+              onClick={() => setModalAtivo('usuarios')}
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                padding: '24px',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 8px 25px rgba(102, 126, 234, 0.25)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '-20px',
+                right: '-20px',
+                width: '80px',
+                height: '80px',
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: '50%'
+              }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ color: 'white', fontSize: '16px', fontWeight: '600', margin: '0 0 8px 0' }}>
+                    Usuários do Sistema
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '36px', fontWeight: '700', margin: 0 }}>
+                    {estatisticas.totalUsuarios}
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', margin: '8px 0 0 0' }}>
+                    Clique para gerenciar
+                  </p>
+                </div>
+                <Users size={48} style={{ color: 'rgba(255,255,255,0.3)' }} />
+              </div>
+            </div>
+
+            {/* Card Veículos */}
+            <div 
+              onClick={() => setModalAtivo('veiculos')}
+              style={{
+                background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                padding: '24px',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 8px 25px rgba(17, 153, 142, 0.25)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '-20px',
+                right: '-20px',
+                width: '80px',
+                height: '80px',
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: '50%'
+              }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ color: 'white', fontSize: '16px', fontWeight: '600', margin: '0 0 8px 0' }}>
+                    Frota de Veículos
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '36px', fontWeight: '700', margin: 0 }}>
+                    {estatisticas.totalVeiculos}
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', margin: '8px 0 0 0' }}>
+                    {estatisticas.veiculosManutencao} em manutenção
+                  </p>
+                </div>
+                <Truck size={48} style={{ color: 'rgba(255,255,255,0.3)' }} />
+              </div>
+            </div>
+
+            {/* Card Viagens */}
+            <div 
+              onClick={() => setModalAtivo('viagens')}
+              style={{
+                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                padding: '24px',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 8px 25px rgba(240, 147, 251, 0.25)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '-20px',
+                right: '-20px',
+                width: '80px',
+                height: '80px',
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: '50%'
+              }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ color: 'white', fontSize: '16px', fontWeight: '600', margin: '0 0 8px 0' }}>
+                    Total de Viagens
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '36px', fontWeight: '700', margin: 0 }}>
+                    {estatisticas.totalViagens}
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', margin: '8px 0 0 0' }}>
+                    {estatisticas.totalKm.toLocaleString()} km percorridos
+                  </p>
+                </div>
+                <Activity size={48} style={{ color: 'rgba(255,255,255,0.3)' }} />
+              </div>
+            </div>
+
+            {/* Card Problemas */}
+            <div 
+              onClick={() => setModalAtivo('ocorrencias')}
+              style={{
+                background: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)',
+                padding: '24px',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 8px 25px rgba(255, 107, 107, 0.25)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '-20px',
+                right: '-20px',
+                width: '80px',
+                height: '80px',
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: '50%'
+              }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ color: 'white', fontSize: '16px', fontWeight: '600', margin: '0 0 8px 0' }}>
+                    Problemas Ativos
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '36px', fontWeight: '700', margin: 0 }}>
+                    {estatisticas.problemasAtivos}
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', margin: '8px 0 0 0' }}>
+                    Requer atenção
+                  </p>
+                </div>
+                <AlertTriangle size={48} style={{ color: 'rgba(255,255,255,0.3)' }} />
+              </div>
+            </div>
+
+            {/* Card Itens de Checklist */}
+            <div 
+              onClick={() => setModalAtivo('checklist')}
+              style={{
+                background: 'linear-gradient(135deg, #4c51bf 0%, #805ad5 100%)',
+                padding: '24px',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 8px 25px rgba(76, 81, 191, 0.25)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '-20px',
+                right: '-20px',
+                width: '80px',
+                height: '80px',
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: '50%'
+              }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ color: 'white', fontSize: '16px', fontWeight: '600', margin: '0 0 8px 0' }}>
+                    Itens de Checklist
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '36px', fontWeight: '700', margin: 0 }}>
+                    {estatisticas.totalItensChecklist}
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', margin: '8px 0 0 0' }}>
+                    Itens de verificação
+                  </p>
+                </div>
+                <CheckCircle size={48} style={{ color: 'rgba(255,255,255,0.3)' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Seção de Ações Rápidas */}
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '20px',
+            padding: '32px',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+            marginBottom: '32px'
+          }}>
+            <h2 style={{ 
+              fontSize: '24px', 
+              fontWeight: '600', 
+              color: '#1f2937',
+              margin: '0 0 24px 0'
+            }}>
+              Ações Rápidas
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px'
+            }}>
+              <button
+                onClick={() => setModalAtivo('usuarios')}
+                style={{
+                  ...buttonStyle,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  justifyContent: 'center'
+                }}
+              >
+                <Plus size={18} />
+                Adicionar Usuário
+              </button>
+              <button
+                onClick={() => setModalAtivo('veiculos')}
+                style={{
+                  ...buttonSecondaryStyle,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  justifyContent: 'center'
+                }}
+              >
+                <Plus size={18} />
+                Adicionar Veículo
+              </button>
+              <button
+                onClick={() => setModalAtivo('cidades')}
+                style={{
+                  ...buttonSecondaryStyle,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  justifyContent: 'center'
+                }}
+              >
+                <Plus size={18} />
+                Adicionar Cidade
+              </button>
+              <button
+                onClick={() => setModalAtivo('checklist')}
+                style={{
+                  ...buttonSecondaryStyle,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  justifyContent: 'center'
+                }}
+              >
+                <Plus size={18} />
+                Itens de Checklist
+              </button>
+              <button
+                onClick={() => setModalAtivo('viagens')}
+                style={{
+                  ...buttonSecondaryStyle,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  justifyContent: 'center'
+                }}
+              >
+                <BarChart3 size={18} />
+                Ver Relatórios
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* MODAIS */}
+        {modalAtivo === 'usuarios' && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+            }}>
+              <div style={{
+                padding: '24px 32px',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white'
+              }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Gerenciar Usuários</h2>
+                <button
+                  onClick={() => setModalAtivo(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white'
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={{ padding: '32px', maxHeight: 'calc(90vh - 100px)', overflowY: 'auto' }}>
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                    Adicionar Novo Usuário
+                  </h3>
+                  <div style={{ display: 'grid', gap: '16px' }}>
+                    <input
+                      type="text"
+                      placeholder="Nome completo do usuário"
+                      value={nomeUsuario}
+                      onChange={(e) => setNomeUsuario(e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      type="password"
+                      placeholder="Senha de acesso"
+                      value={senhaUsuario}
+                      onChange={(e) => setSenhaUsuario(e.target.value)}
+                      style={inputStyle}
+                    />
+                    <select
+                      value={tipoUsuarioNovo}
+                      onChange={(e) => setTipoUsuarioNovo(e.target.value)}
+                      style={inputStyle}
+                    >
+                      <option value="motorista">Motorista</option>
+                      <option value="manutencao">Manutenção</option>
+                      <option value="gerencia">Gerência</option>
+                    </select>
+                    <button
+                      onClick={adicionarUsuario}
+                      style={{
+                        ...buttonStyle,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Plus size={18} />
+                      Adicionar Usuário
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                    Usuários Cadastrados ({usuarios.length})
+                  </h3>
+                  <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    {usuarios.map(usuario => (
+                      <div key={usuario.id} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        padding: '16px', 
+                        backgroundColor: '#f8fafc', 
+                        borderRadius: '12px',
+                        marginBottom: '8px',
+                        border: '1px solid #e5e7eb'
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: '600', color: '#1f2937' }}>{usuario.nome}</div>
+                          <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                            {usuario.tipo.charAt(0).toUpperCase() + usuario.tipo.slice(1)}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removerUsuario(usuario.id)}
+                          style={buttonDangerStyle}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {modalAtivo === 'veiculos' && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+            }}>
+              <div style={{
+                padding: '24px 32px',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white'
+              }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Gerenciar Veículos</h2>
+                <button
+                  onClick={() => setModalAtivo(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white'
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={{ padding: '32px', maxHeight: 'calc(90vh - 100px)', overflowY: 'auto' }}>
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                    Adicionar Novo Veículo
+                  </h3>
+                  <div style={{ display: 'grid', gap: '16px' }}>
+                    <input
+                      type="text"
+                      placeholder="Prefixo do veículo (ex: 1001)"
+                      value={prefixoVeiculo}
+                      onChange={(e) => setPrefixoVeiculo(e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Placa do veículo (ex: ABC-1234)"
+                      value={placaVeiculo}
+                      onChange={(e) => setPlacaVeiculo(e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Modelo do veículo"
+                      value={modeloVeiculo}
+                      onChange={(e) => setModeloVeiculo(e.target.value)}
+                      style={inputStyle}
+                    />
+                    <button
+                      onClick={adicionarVeiculo}
+                      style={{
+                        ...buttonStyle,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Plus size={18} />
+                      Adicionar Veículo
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                    Veículos Cadastrados ({veiculos.length})
+                  </h3>
+                  <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    {veiculos.map(veiculo => (
+                      <div key={veiculo.id} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        padding: '16px', 
+                        backgroundColor: veiculo.status === 'manutencao' ? '#fef2f2' : '#f8fafc', 
+                        borderRadius: '12px',
+                        marginBottom: '8px',
+                        border: `1px solid ${veiculo.status === 'manutencao' ? '#fecaca' : '#e5e7eb'}`
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: '600', color: '#1f2937' }}>
+                            {veiculo.prefixo} - {veiculo.placa}
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                            {veiculo.modelo}
+                          </div>
+                          <div style={{ 
+                            fontSize: '12px', 
+                            color: veiculo.status === 'manutencao' ? '#dc2626' : '#059669',
+                            fontWeight: '500'
+                          }}>
+                            {veiculo.status === 'manutencao' ? '🔧 Em Manutenção' : '✅ Ativo'}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removerVeiculo(veiculo.id)}
+                          style={buttonDangerStyle}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {modalAtivo === 'cidades' && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+            }}>
+              <div style={{
+                padding: '24px 32px',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white'
+              }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Gerenciar Cidades</h2>
+                <button
+                  onClick={() => setModalAtivo(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white'
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={{ padding: '32px', maxHeight: 'calc(90vh - 100px)', overflowY: 'auto' }}>
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                    Adicionar Nova Cidade
+                  </h3>
+                  <div style={{ display: 'grid', gap: '16px' }}>
+                    <input
+                      type="text"
+                      placeholder="Nome da cidade"
+                      value={nomeCidade}
+                      onChange={(e) => setNomeCidade(e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      type="text"
+                      placeholder="UF (ex: SP)"
+                      value={ufCidade}
+                      onChange={(e) => setUfCidade(e.target.value.toUpperCase())}
+                      maxLength="2"
+                      style={inputStyle}
+                    />
+                    <button
+                      onClick={adicionarCidade}
+                      style={{
+                        ...buttonStyle,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Plus size={18} />
+                      Adicionar Cidade
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                    Cidades Cadastradas ({cidades.length})
+                  </h3>
+                  <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    {cidades.map(cidade => (
+                      <div key={cidade.id} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        padding: '16px', 
+                        backgroundColor: '#f8fafc', 
+                        borderRadius: '12px',
+                        marginBottom: '8px',
+                        border: '1px solid #e5e7eb'
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: '600', color: '#1f2937' }}>
+                            {cidade.nome} - {cidade.uf}
+                          </div>
+                        </div>
+                        <MapPin size={20} style={{ color: '#6b7280' }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {modalAtivo === 'checklist' && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+            }}>
+              <div style={{
+                padding: '24px 32px',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #4c51bf 0%, #805ad5 100%)',
+                color: 'white'
+              }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Gerenciar Itens de Checklist</h2>
+                <button
+                  onClick={() => setModalAtivo(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white'
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={{ padding: '32px', maxHeight: 'calc(90vh - 100px)', overflowY: 'auto' }}>
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                    Adicionar Novo Item de Checklist
+                  </h3>
+                  <div style={{ display: 'grid', gap: '16px' }}>
+                    <input
+                      type="text"
+                      placeholder="Nome do item (ex: Pneus, Freios, etc.)"
+                      value={nomeItemChecklist}
+                      onChange={(e) => setNomeItemChecklist(e.target.value)}
+                      style={inputStyle}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                      <input
+                        type="checkbox"
+                        id="obrigatorioCheck"
+                        checked={obrigatorioItemChecklist}
+                        onChange={(e) => setObrigatorioItemChecklist(e.target.checked)}
+                        style={{ width: '20px', height: '20px' }}
+                      />
+                      <label htmlFor="obrigatorioCheck" style={{ fontSize: '16px', color: '#1f2937', cursor: 'pointer' }}>
+                        Item obrigatório na verificação
+                      </label>
+                    </div>
+                    <button
+                      onClick={adicionarItemChecklist}
+                      style={{
+                        ...buttonStyle,
+                        background: 'linear-gradient(135deg, #4c51bf 0%, #805ad5 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Plus size={18} />
+                      Adicionar Item
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                    Itens de Checklist Cadastrados ({itensChecklist.length})
+                  </h3>
+                  <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    {itensChecklist.map(item => (
+                      <div key={item.id} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        padding: '16px', 
+                        backgroundColor: '#f8fafc', 
+                        borderRadius: '12px',
+                        marginBottom: '8px',
+                        border: '1px solid #e5e7eb'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div>
+                            <div style={{ fontWeight: '600', color: '#1f2937' }}>
+                              {item.nome}
+                            </div>
+                            <div style={{ 
+                              fontSize: '12px', 
+                              color: item.obrigatorio ? '#dc2626' : '#059669',
+                              fontWeight: '500',
+                              marginTop: '4px'
+                            }}>
+                              {item.obrigatorio ? '🔴 Obrigatório' : '🟢 Opcional'}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removerItemChecklist(item.id)}
+                          style={buttonDangerStyle}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {modalAtivo === 'viagens' && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              maxWidth: '800px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+            }}>
+              <div style={{
+                padding: '24px 32px',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white'
+              }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Relatório de Viagens</h2>
+                <button
+                  onClick={() => setModalAtivo(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white'
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={{ padding: '32px', maxHeight: 'calc(90vh - 100px)', overflowY: 'auto' }}>
+                <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                  {viagens.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px' }}>
+                      <Activity size={48} style={{ color: '#d1d5db', marginBottom: '16px' }} />
+                      <p style={{ color: '#6b7280', fontSize: '16px' }}>Nenhuma viagem realizada ainda.</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: '16px' }}>
+                      {viagens.map(viagem => (
+                        <div key={viagem.id} style={{ 
+                          padding: '24px', 
+                          backgroundColor: viagem.temProblemas ? '#fef2f2' : '#f8fafc', 
+                          borderRadius: '16px',
+                          border: `2px solid ${viagem.temProblemas ? '#fecaca' : '#e5e7eb'}`
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <div>
+                              <h4 style={{ margin: 0, fontWeight: '600', fontSize: '18px' }}>
+                                {viagem.motorista}
+                              </h4>
+                              <p style={{ margin: '4px 0', color: '#6b7280', fontSize: '14px' }}>
+                                {viagem.dataHora}
+                              </p>
+                            </div>
+                            <div style={{
+                              padding: '8px 16px',
+                              borderRadius: '20px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              backgroundColor: viagem.temProblemas ? '#dc2626' : '#059669',
+                              color: 'white'
+                            }}>
+                              {viagem.temProblemas ? '⚠️ Com Problemas' : '✅ Concluída'}
+                            </div>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                            <div>
+                              <span style={{ fontSize: '12px', color: '#6b7280' }}>Rota</span>
+                              <p style={{ margin: '4px 0', fontWeight: '500' }}>
+                                {viagem.origem} → {viagem.destino}
+                              </p>
+                            </div>
+                            <div>
+                              <span style={{ fontSize: '12px', color: '#6b7280' }}>Veículo</span>
+                              <p style={{ margin: '4px 0', fontWeight: '500' }}>
+                                {viagem.prefixo}
+                              </p>
+                            </div>
+                            <div>
+                              <span style={{ fontSize: '12px', color: '#6b7280' }}>Distância</span>
+                              <p style={{ margin: '4px 0', fontWeight: '500' }}>
+                                {viagem.kmPercorridos} km
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {modalAtivo === 'ocorrencias' && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              maxWidth: '800px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+            }}>
+              <div style={{
+                padding: '24px 32px',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white'
+              }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Problemas Ativos</h2>
+                <button
+                  onClick={() => setModalAtivo(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white'
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={{ padding: '32px', maxHeight: 'calc(90vh - 100px)', overflowY: 'auto' }}>
+                <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                  {(() => {
+                    const problemasAtivos = [];
+                    viagens.forEach(viagem => {
+                      const itensNaoResolvidos = viagem.itensNaoConformes?.filter(item => !item.resolvido) || [];
+                      itensNaoResolvidos.forEach(item => {
+                        problemasAtivos.push({
+                          tipo: 'checklist',
+                          viagem,
+                          descricao: `${item.item}: ${item.observacao}`,
+                          status: 'Pendente'
+                        });
+                      });
+                      
+                      if (viagem.ordemServico && viagem.ordemServico.trim() && viagem.statusManutencao !== 'resolvida') {
+                        problemasAtivos.push({
+                          tipo: 'os',
+                          viagem,
+                          descricao: viagem.ordemServico,
+                          status: 'Pendente'
+                        });
+                      }
+                    });
+
+                    if (problemasAtivos.length === 0) {
+                      return (
+                        <div style={{ textAlign: 'center', padding: '40px' }}>
+                          <CheckCircle size={48} style={{ color: '#059669', marginBottom: '16px' }} />
+                          <h3 style={{ color: '#059669', fontSize: '18px', fontWeight: '600' }}>
+                            Nenhum problema ativo!
+                          </h3>
+                          <p style={{ color: '#6b7280', fontSize: '14px' }}>
+                            Todos os veículos estão em perfeitas condições.
+                          </p>
+                        </div>
+                      );
                     }
-                });
-            });
-        }
 
-        function showTripSummary() {
-            const vehicle = vehicles.find(v => v.id == document.getElementById('tripVehicle').value);
-            const nonConformItems = checkNonConformItems();
+                    return (
+                      <div style={{ display: 'grid', gap: '16px' }}>
+                        {problemasAtivos.map((problema, idx) => (
+                          <div key={idx} style={{ 
+                            padding: '24px', 
+                            backgroundColor: '#fef2f2', 
+                            borderRadius: '16px',
+                            border: '2px solid #fecaca'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ 
+                                  backgroundColor: '#dc2626', 
+                                  color: 'white', 
+                                  padding: '4px 12px', 
+                                  borderRadius: '12px', 
+                                  fontSize: '12px',
+                                  fontWeight: '600'
+                                }}>
+                                  {problema.tipo === 'checklist' ? 'CHECKLIST' : 'ORDEM DE SERVIÇO'}
+                                </div>
+                                <h4 style={{ margin: 0, color: '#991b1b', fontWeight: '600' }}>
+                                  Veículo: {problema.viagem.prefixo}
+                                </h4>
+                              </div>
+                              <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                                {problema.viagem.dataHora}
+                              </span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                              <div>
+                                <span style={{ fontSize: '12px', color: '#6b7280' }}>Motorista</span>
+                                <p style={{ margin: '4px 0', fontWeight: '500' }}>
+                                  {problema.viagem.motorista}
+                                </p>
+                              </div>
+                              <div>
+                                <span style={{ fontSize: '12px', color: '#6b7280' }}>Rota</span>
+                                <p style={{ margin: '4px 0', fontWeight: '500' }}>
+                                  {problema.viagem.origem} → {problema.viagem.destino}
+                                </p>
+                              </div>
+                            </div>
+                            <div style={{ 
+                              padding: '16px', 
+                              backgroundColor: '#fee2e2', 
+                              borderRadius: '12px',
+                              borderLeft: '4px solid #dc2626'
+                            }}>
+                              <strong style={{ color: '#991b1b', fontSize: '14px' }}>Problema:</strong>
+                              <p style={{ margin: '8px 0 0 0', color: '#991b1b', fontSize: '14px' }}>
+                                {problema.descricao}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
-            document.getElementById('tripSummary').innerHTML = \`
-                <p><strong>Veículo:</strong> \${vehicle.prefix}</p>
-                <p><strong>KM Inicial:</strong> \${document.getElementById('tripKmInitial').value}</p>
-                <p><strong>Check-in:</strong> Realizado com sucesso</p>
-            \`;
+  return null;
+};
 
-            if (nonConformItems.length > 0) {
-                document.getElementById('nonConformAlert').classList.remove('hidden');
-                document.getElementById('nonConformAlert').innerHTML = \`
-                    ⚠️ \${nonConformItems.length} item(ns) não conforme(s) encontrado(s). 
-                    Ordens de serviço serão geradas automaticamente.
-                \`;
-            }
-        }
-
-        function checkNonConformItems() {
-            const nonConformItems = [];
-            checkInItems.forEach(item => {
-                const selectedRadio = document.querySelector(\`input[name="item_\${item.id}"]:checked\`);
-                if (selectedRadio && selectedRadio.value === 'NAO_CONFORME') {
-                    nonConformItems.push(item);
-                }
-            });
-            return nonConformItems;
-        }
-
-        function confirmTrip() {
-            currentTrip = {
-                id: Date.now(),
-                vehicle: vehicles.find(v => v.id == document.getElementById('tripVehicle').value),
-                kmInitial: document.getElementById('tripKmInitial').value,
-                status: 'EM_ANDAMENTO'
-            };
-
-            saveToLocal('currentTrip', currentTrip);
-            showAlert('Boa viagem! Viagem iniciada com sucesso.', 'success');
-            showNotification('Viagem Iniciada', \`Boa viagem com o veículo \${currentTrip.vehicle.prefix}!\`);
-            showScreen('driverHomeScreen');
-            
-            currentTripStep = 1;
-            document.getElementById('tripStep2').classList.add('hidden');
-            document.getElementById('tripStep3').classList.add('hidden');
-            document.getElementById('tripStep1').classList.remove('hidden');
-            document.getElementById('step1').className = 'step active';
-            document.getElementById('step2').className = 'step';
-            document.getElementById('step3').className = 'step';
-        }
-
-        function finishCurrentTrip() {
-            if (currentTrip) {
-                showModal('finishTripModal');
-            }
-        }
-
-        function confirmFinishTrip() {
-            const kmFinal = document.getElementById('tripKmFinal').value;
-            const problems = document.getElementById('tripProblems').value;
-
-            if (!kmFinal) {
-                showAlert('Digite o KM final!', 'error');
-                return;
-            }
-
-            if (parseInt(kmFinal) <= parseInt(currentTrip.kmInitial)) {
-                showAlert('KM final deve ser maior que o inicial!', 'error');
-                return;
-            }
-
-            currentTrip.kmFinal = kmFinal;
-            currentTrip.problems = problems;
-            currentTrip.status = 'FINALIZADA';
-
-            const vehicle = vehicles.find(v => v.id === currentTrip.vehicle.id);
-            if (vehicle) {
-                vehicle.kmCurrent = parseInt(kmFinal);
-            }
-
-            saveToLocal('vehicles', vehicles);
-            currentTrip = null;
-            localStorage.removeItem('rtdigital_currentTrip');
-            hideModal('finishTripModal');
-            showAlert('Viagem finalizada com sucesso!', 'success');
-            showNotification('Viagem Finalizada', 'Viagem concluída com sucesso!');
-        }
-
-        function showModal(modalId) {
-            document.getElementById(modalId).classList.remove('hidden');
-        }
-
-        function hideModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        }
-
-        function showAddUserModal() {
-            showModal('addUserModal');
-        }
-
-        function showAddVehicleModal() {
-            showModal('addVehicleModal');
-        }
-
-        function generateExcelReport() {
-            showAlert('Relatório Excel gerado com sucesso! (Funcionalidade simulada)', 'success');
-            showNotification('Relatório Gerado', 'Relatório Excel criado com sucesso!');
-        }
-    </script>
-</body>
-</html>
+export default App;
