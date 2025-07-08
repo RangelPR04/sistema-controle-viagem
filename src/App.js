@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Camera, CheckCircle, XCircle, Play, Square, FileText, Wrench, Users, Truck, Settings, LogOut, Eye, Plus, Edit2, Trash2, AlertTriangle, ArrowLeft, MapPin, Clock, User, Search, Filter, BarChart3, TrendingUp, Activity, Bell, Menu, X } from 'lucide-react';
 
 const App = () => {
@@ -25,9 +25,36 @@ const App = () => {
   ]);
   
   const [veiculos, setVeiculos] = useState([
-    { id: 1, prefixo: '1001', placa: 'ABC-1234', modelo: 'Mercedes-Benz O-500', status: 'ativo' },
-    { id: 2, prefixo: '1002', placa: 'DEF-5678', modelo: 'Volvo B270F', status: 'ativo' },
-    { id: 3, prefixo: '1003', placa: 'GHI-9012', modelo: 'Scania K270', status: 'manutencao' }
+    { 
+      id: 1, 
+      prefixo: '1001', 
+      placa: 'ABC-1234', 
+      modelo: 'Mercedes-Benz O-500', 
+      status: 'ativo',
+      ultimoKm: 52450,
+      kmProximaRevisao: 60000,
+      intervaloRevisao: 10000
+    },
+    { 
+      id: 2, 
+      prefixo: '1002', 
+      placa: 'DEF-5678', 
+      modelo: 'Volvo B270F', 
+      status: 'ativo',
+      ultimoKm: 45200,
+      kmProximaRevisao: 50000,
+      intervaloRevisao: 10000
+    },
+    { 
+      id: 3, 
+      prefixo: '1003', 
+      placa: 'GHI-9012', 
+      modelo: 'Scania K270', 
+      status: 'manutencao',
+      ultimoKm: 50450,
+      kmProximaRevisao: 55000,
+      intervaloRevisao: 8000
+    }
   ]);
   
   const [cidades, setCidades] = useState([
@@ -77,11 +104,14 @@ const App = () => {
     }
   ]);
   
-  // Estados do formulário de login (SIMPLES)
+  // Estado para veículos com revisão concluída aguardando parametrização
+  const [veiculosRevisaoConcluida, setVeiculosRevisaoConcluida] = useState([]);
+  
+  // Estados do formulário de login
   const [loginUsuario, setLoginUsuario] = useState('');
   const [loginSenha, setLoginSenha] = useState('');
   
-  // Estados para formulários (SIMPLES)
+  // Estados para formulários
   const [nomeUsuario, setNomeUsuario] = useState('');
   const [senhaUsuario, setSenhaUsuario] = useState('');
   const [tipoUsuarioNovo, setTipoUsuarioNovo] = useState('motorista');
@@ -89,6 +119,14 @@ const App = () => {
   const [prefixoVeiculo, setPrefixoVeiculo] = useState('');
   const [placaVeiculo, setPlacaVeiculo] = useState('');
   const [modeloVeiculo, setModeloVeiculo] = useState('');
+  const [kmAtualVeiculo, setKmAtualVeiculo] = useState('');
+  const [intervaloRevisaoVeiculo, setIntervaloRevisaoVeiculo] = useState('10000');
+  
+  // Estados para edição de veículos
+  const [veiculoEditando, setVeiculoEditando] = useState(null);
+  const [editKmAtual, setEditKmAtual] = useState('');
+  const [editIntervaloRevisao, setEditIntervaloRevisao] = useState('');
+  const [editKmProximaRevisao, setEditKmProximaRevisao] = useState('');
   
   const [nomeCidade, setNomeCidade] = useState('');
   const [ufCidade, setUfCidade] = useState('');
@@ -114,7 +152,7 @@ const App = () => {
   const [mostrarSugestoesOrigem, setMostrarSugestoesOrigem] = useState(false);
   const [mostrarSugestoesDestino, setMostrarSugestoesDestino] = useState(false);
 
-  // Funções básicas (SEM CALLBACKS COMPLEXOS)
+  // Funções básicas
   const fazerLogin = () => {
     // Verificar se é admin primeiro
     if (loginUsuario === credenciaisAdmin.usuario && loginSenha === credenciaisAdmin.senha) {
@@ -183,18 +221,27 @@ const App = () => {
   };
 
   const adicionarVeiculo = () => {
-    if (prefixoVeiculo && placaVeiculo && modeloVeiculo) {
+    if (prefixoVeiculo && placaVeiculo && modeloVeiculo && kmAtualVeiculo && intervaloRevisaoVeiculo) {
       const novoId = Math.max(...veiculos.map(v => v.id), 0) + 1;
+      const kmAtual = parseInt(kmAtualVeiculo);
+      const intervalo = parseInt(intervaloRevisaoVeiculo);
+      const proximaRevisao = kmAtual + intervalo;
+      
       setVeiculos([...veiculos, { 
         id: novoId, 
         prefixo: prefixoVeiculo, 
         placa: placaVeiculo, 
-        modelo: modeloVeiculo, 
+        modelo: modeloVeiculo,
+        ultimoKm: kmAtual,
+        kmProximaRevisao: proximaRevisao,
+        intervaloRevisao: intervalo,
         status: 'ativo' 
       }]);
       setPrefixoVeiculo('');
       setPlacaVeiculo('');
       setModeloVeiculo('');
+      setKmAtualVeiculo('');
+      setIntervaloRevisaoVeiculo('10000');
     }
   };
 
@@ -230,6 +277,49 @@ const App = () => {
 
   const removerVeiculo = (id) => {
     setVeiculos(veiculos.filter(v => v.id !== id));
+  };
+
+  const iniciarEdicaoVeiculo = (veiculo) => {
+    setVeiculoEditando(veiculo.id);
+    setEditKmAtual(veiculo.ultimoKm?.toString() || '');
+    setEditIntervaloRevisao(veiculo.intervaloRevisao?.toString() || '');
+    setEditKmProximaRevisao(veiculo.kmProximaRevisao?.toString() || '');
+  };
+
+  const salvarEdicaoVeiculo = (id) => {
+    const kmAtual = parseInt(editKmAtual) || 0;
+    const intervalo = parseInt(editIntervaloRevisao) || 10000;
+    let proximaRevisao = parseInt(editKmProximaRevisao) || 0;
+    
+    // Se não foi definida uma próxima revisão ou é menor que o KM atual, calcular automaticamente
+    if (!proximaRevisao || proximaRevisao <= kmAtual) {
+      proximaRevisao = kmAtual + intervalo;
+    }
+    
+    setVeiculos(veiculos.map(v => 
+      v.id === id 
+        ? { 
+            ...v, 
+            ultimoKm: kmAtual,
+            intervaloRevisao: intervalo,
+            kmProximaRevisao: proximaRevisao
+          }
+        : v
+    ));
+    
+    setVeiculoEditando(null);
+    setEditKmAtual('');
+    setEditIntervaloRevisao('');
+    setEditKmProximaRevisao('');
+    
+    alert('✅ Parâmetros de KM atualizados com sucesso!');
+  };
+
+  const cancelarEdicaoVeiculo = () => {
+    setVeiculoEditando(null);
+    setEditKmAtual('');
+    setEditIntervaloRevisao('');
+    setEditKmProximaRevisao('');
   };
 
   const removerItemChecklist = (id) => {
@@ -298,6 +388,75 @@ const App = () => {
       ));
       
       alert(`✅ Ordem de serviço do veículo ${viagem.prefixo} foi processada!`);
+    }
+  };
+
+  // Nova função para marcar revisão como concluída
+  const marcarRevisaoConcluida = (veiculoId) => {
+    const veiculo = veiculos.find(v => v.id === veiculoId);
+    if (!veiculo) return;
+    
+    const confirmar = confirm(
+      `🔧 REVISÃO CONCLUÍDA\n\nConfirma que a revisão do veículo ${veiculo.prefixo} foi realizada?\n\nIsso notificará o administrador para atualizar os parâmetros de quilometragem.`
+    );
+    
+    if (confirmar) {
+      // Adicionar à lista de veículos com revisão concluída
+      const novaRevisao = {
+        id: Math.random().toString(36).substr(2, 9),
+        veiculoId: veiculo.id,
+        prefixo: veiculo.prefixo,
+        placa: veiculo.placa,
+        modelo: veiculo.modelo,
+        kmAtual: veiculo.ultimoKm,
+        kmRevisaoAnterior: veiculo.kmProximaRevisao,
+        intervaloAnterior: veiculo.intervaloRevisao,
+        dataRevisao: new Date().toLocaleString(),
+        responsavel: usuario.nome,
+        novoKmSugerido: veiculo.ultimoKm + veiculo.intervaloRevisao, // Sugestão inteligente
+        status: 'aguardando_parametrizacao'
+      };
+      
+      setVeiculosRevisaoConcluida(prev => [...prev, novaRevisao]);
+      
+      alert(`✅ Revisão marcada como concluída!\n\nO administrador foi notificado para atualizar os parâmetros de quilometragem do veículo ${veiculo.prefixo}.`);
+    }
+  };
+
+  // Função para o admin processar revisão concluída
+  const processarRevisaoConcluida = (revisaoId, novoKmRevisao, novoIntervalo) => {
+    const revisao = veiculosRevisaoConcluida.find(r => r.id === revisaoId);
+    if (!revisao) return;
+    
+    // Atualizar o veículo com novos parâmetros
+    setVeiculos(veiculos.map(v => 
+      v.id === revisao.veiculoId 
+        ? { 
+            ...v, 
+            kmProximaRevisao: parseInt(novoKmRevisao) || (v.ultimoKm + (parseInt(novoIntervalo) || v.intervaloRevisao)),
+            intervaloRevisao: parseInt(novoIntervalo) || v.intervaloRevisao
+          }
+        : v
+    ));
+    
+    // Remover da lista de revisões pendentes
+    setVeiculosRevisaoConcluida(prev => prev.filter(r => r.id !== revisaoId));
+    
+    alert(`✅ Parâmetros de revisão atualizados com sucesso!\n\nVeículo ${revisao.prefixo} está pronto para operação.`);
+  };
+
+  // Função para rejeitar revisão (caso não tenha sido realmente feita)
+  const rejeitarRevisaoConcluida = (revisaoId) => {
+    const revisao = veiculosRevisaoConcluida.find(r => r.id === revisaoId);
+    if (!revisao) return;
+    
+    const confirmar = confirm(
+      `⚠️ REJEITAR REVISÃO\n\nTem certeza que deseja rejeitar a revisão do veículo ${revisao.prefixo}?\n\nIsso indicará que a revisão não foi realmente concluída.`
+    );
+    
+    if (confirmar) {
+      setVeiculosRevisaoConcluida(prev => prev.filter(r => r.id !== revisaoId));
+      alert(`❌ Revisão rejeitada. O veículo ${revisao.prefixo} continua com status de revisão pendente.`);
     }
   };
 
@@ -387,11 +546,24 @@ const App = () => {
     
     setViagens([...viagens, novaViagem]);
     
+    // Atualizar KM do veículo mas NÃO atualizar a próxima revisão automaticamente
+    setVeiculos(prevVeiculos => prevVeiculos.map(veiculo => {
+      if (veiculo.prefixo === dadosViagem.prefixo) {
+        const novoKm = kmFinal;
+        
+        // IMPORTANTE: NÃO atualizar a próxima revisão automaticamente
+        // A revisão só deve ser atualizada quando a manutenção for feita
+        return {
+          ...veiculo,
+          ultimoKm: novoKm,
+          // kmProximaRevisao permanece igual - só muda quando manutenção fizer a revisão
+          status: itensNaoConformes.length > 0 ? 'manutencao' : veiculo.status
+        };
+      }
+      return veiculo;
+    }));
+    
     if (itensNaoConformes.length > 0) {
-      setVeiculos(veiculos.map(v => 
-        v.prefixo === dadosViagem.prefixo ? { ...v, status: 'manutencao' } : v
-      ));
-      
       alert(`⚠️ Viagem concluída!\n\nVeículo ${dadosViagem.prefixo} foi automaticamente colocado em manutenção devido aos itens não conformes encontrados.`);
     } else if (dadosViagem.ordemServico.trim()) {
       alert('✅ Viagem concluída!\n\n⚠️ Ordem de serviço registrada para o veículo.');
@@ -456,11 +628,12 @@ const App = () => {
       totalItensChecklist: itensChecklist.length,
       problemasAtivos,
       totalKm,
-      veiculosManutencao
+      veiculosManutencao,
+      revisoesPendentes: veiculosRevisaoConcluida.length
     };
-  }, [usuarios, veiculos, cidades, viagens, itensChecklist]);
+  }, [usuarios, veiculos, cidades, viagens, itensChecklist, veiculosRevisaoConcluida]);
 
-  // CSS básico como string (não causa re-renderização)
+  // CSS básico como string
   const inputStyle = {
     width: '100%',
     padding: '12px 16px',
@@ -501,12 +674,42 @@ const App = () => {
     padding: '8px 12px'
   };
 
-  // Handle do Enter no login
+  // Handle do Enter no login e scroll para mobile
   const handleLoginKeyPress = (e) => {
     if (e.key === 'Enter') {
       fazerLogin();
     }
   };
+
+  // Função para scroll automático em mobile
+  const handleMobileFocus = () => {
+    // Detectar se é mobile
+    const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      setTimeout(() => {
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      }, 300); // Delay para aguardar o teclado aparecer
+    }
+  };
+
+  // useEffect para melhorar experiência mobile
+  useEffect(() => {
+    // Prevenir zoom em iOS quando focando inputs
+    const inputs = document.querySelectorAll('input[type="text"], input[type="password"]');
+    inputs.forEach(input => {
+      input.addEventListener('focus', handleMobileFocus);
+    });
+
+    return () => {
+      inputs.forEach(input => {
+        input.removeEventListener('focus', handleMobileFocus);
+      });
+    };
+  }, [usuario.tela]);
 
   // TELA DE LOGIN
   if (usuario.tela === 'login') {
@@ -518,7 +721,10 @@ const App = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        // Melhorias para mobile
+        paddingTop: '40px',
+        paddingBottom: '40px'
       }}>
         <div style={{
           maxWidth: '400px',
@@ -526,7 +732,11 @@ const App = () => {
           backgroundColor: 'white',
           borderRadius: '20px',
           padding: '40px',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+          boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
+          // Ajustes para mobile
+          margin: '0 auto',
+          transform: 'translateY(0)', // Garante posicionamento correto
+          position: 'relative'
         }}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <div style={{
@@ -565,7 +775,12 @@ const App = () => {
               value={loginUsuario}
               onChange={(e) => setLoginUsuario(e.target.value)}
               onKeyPress={handleLoginKeyPress}
-              style={inputStyle}
+              onFocus={handleMobileFocus}
+              style={{
+                ...inputStyle,
+                fontSize: '16px', // Previne zoom no iOS
+                WebkitAppearance: 'none' // Remove estilo padrão iOS
+              }}
             />
           </div>
           
@@ -576,14 +791,24 @@ const App = () => {
               value={loginSenha}
               onChange={(e) => setLoginSenha(e.target.value)}
               onKeyPress={handleLoginKeyPress}
-              style={inputStyle}
+              onFocus={handleMobileFocus}
+              style={{
+                ...inputStyle,
+                fontSize: '16px', // Previne zoom no iOS
+                WebkitAppearance: 'none' // Remove estilo padrão iOS
+              }}
             />
           </div>
           
           <div style={{ marginBottom: '24px' }}>
             <button
               onClick={fazerLogin}
-              style={buttonStyle}
+              style={{
+                ...buttonStyle,
+                // Melhorias para mobile
+                minHeight: '48px', // Altura mínima para touch
+                fontSize: '16px'
+              }}
             >
               Entrar no Sistema
             </button>
@@ -1422,6 +1647,10 @@ const App = () => {
       v.ordemServico.trim() !== '' && 
       v.statusManutencao !== 'resolvida'
     );
+    const veiculosRevisaoProxima = veiculos.filter(v => {
+      const kmParaRevisao = v.kmProximaRevisao - v.ultimoKm;
+      return kmParaRevisao <= 1000;
+    });
     
     return (
       <div style={{ 
@@ -1465,6 +1694,112 @@ const App = () => {
         </div>
         
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px' }}>
+          {/* Notificações de Revisão */}
+          {(() => {
+            const veiculosRevisaoProxima = veiculos.filter(v => {
+              const kmParaRevisao = v.kmProximaRevisao - v.ultimoKm;
+              return kmParaRevisao <= 1000 && v.status === 'ativo';
+            });
+
+            if (veiculosRevisaoProxima.length > 0) {
+              return (
+                <div style={{
+                  backgroundColor: '#fef2f2',
+                  border: '2px solid #fca5a5',
+                  borderRadius: '16px',
+                  padding: '20px',
+                  marginBottom: '24px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: '#dc2626',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Bell style={{ color: 'white' }} size={20} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, color: '#991b1b', fontSize: '18px', fontWeight: '600' }}>
+                        🔔 Notificações de Revisão
+                      </h3>
+                      <p style={{ margin: 0, color: '#7f1d1d', fontSize: '14px' }}>
+                        {veiculosRevisaoProxima.length} veículo(s) próximo(s) da revisão
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    {veiculosRevisaoProxima.map(veiculo => {
+                      const kmParaRevisao = veiculo.kmProximaRevisao - veiculo.ultimoKm;
+                      
+                      return (
+                        <div key={veiculo.id} style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '16px',
+                          backgroundColor: '#fee2e2',
+                          borderRadius: '12px',
+                          border: '1px solid #fecaca'
+                        }}>
+                          <div>
+                            <h4 style={{ margin: '0 0 4px 0', color: '#991b1b', fontWeight: '600' }}>
+                              {veiculo.prefixo} - {veiculo.placa}
+                            </h4>
+                            <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#7f1d1d' }}>
+                              {veiculo.modelo}
+                            </p>
+                            <div style={{ fontSize: '12px', color: '#7f1d1d' }}>
+                              <span>KM Atual: {veiculo.ultimoKm?.toLocaleString()}</span>
+                              <span style={{ marginLeft: '12px' }}>
+                                Revisão em: {veiculo.kmProximaRevisao?.toLocaleString()} km
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ 
+                              fontSize: '16px', 
+                              fontWeight: 'bold', 
+                              color: kmParaRevisao <= 0 ? '#dc2626' : '#f59e0b'
+                            }}>
+                              {kmParaRevisao <= 0 ? 'VENCIDA' : `${kmParaRevisao} km`}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#7f1d1d', marginBottom: '8px' }}>
+                              {kmParaRevisao <= 0 ? 'Revisão em atraso' : 'Faltam para revisão'}
+                            </div>
+                            {/* Botão para marcar revisão como concluída */}
+                            <button
+                              onClick={() => marcarRevisaoConcluida(veiculo.id)}
+                              style={{
+                                ...buttonStyle,
+                                background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                                padding: '6px 12px',
+                                fontSize: '11px',
+                                width: 'auto',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                marginTop: '4px'
+                              }}
+                            >
+                              <CheckCircle size={12} />
+                              Revisão Concluída
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {/* Cards de Resumo */}
           <div style={{ 
             display: 'grid', 
@@ -1520,6 +1855,23 @@ const App = () => {
                   <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{veiculos.filter(v => v.status === 'ativo').length}</p>
                 </div>
                 <CheckCircle size={40} style={{ opacity: 0.3 }} />
+              </div>
+            </div>
+
+            {/* Card Revisões Próximas */}
+            <div style={{
+              background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+              padding: '24px',
+              borderRadius: '16px',
+              color: 'white',
+              boxShadow: '0 8px 25px rgba(124, 58, 237, 0.25)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Revisões Próximas</h3>
+                  <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{veiculosRevisaoProxima.length}</p>
+                </div>
+                <Bell size={40} style={{ opacity: 0.3 }} />
               </div>
             </div>
           </div>
@@ -2527,6 +2879,19 @@ const App = () => {
                 Itens de Checklist
               </button>
               <button
+                onClick={() => setModalAtivo('relatorio-km')}
+                style={{
+                  ...buttonSecondaryStyle,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  justifyContent: 'center'
+                }}
+              >
+                <BarChart3 size={18} />
+                Relatório de KM
+              </button>
+              <button
                 onClick={() => setModalAtivo('viagens')}
                 style={{
                   ...buttonSecondaryStyle,
@@ -2755,6 +3120,20 @@ const App = () => {
                       onChange={(e) => setModeloVeiculo(e.target.value)}
                       style={inputStyle}
                     />
+                    <input
+                      type="number"
+                      placeholder="KM atual do veículo"
+                      value={kmAtualVeiculo}
+                      onChange={(e) => setKmAtualVeiculo(e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Intervalo de revisão (km)"
+                      value={intervaloRevisaoVeiculo}
+                      onChange={(e) => setIntervaloRevisaoVeiculo(e.target.value)}
+                      style={inputStyle}
+                    />
                     <button
                       onClick={adicionarVeiculo}
                       style={{
@@ -2776,40 +3155,214 @@ const App = () => {
                     Veículos Cadastrados ({veiculos.length})
                   </h3>
                   <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                    {veiculos.map(veiculo => (
-                      <div key={veiculo.id} style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center', 
-                        padding: '16px', 
-                        backgroundColor: veiculo.status === 'manutencao' ? '#fef2f2' : '#f8fafc', 
-                        borderRadius: '12px',
-                        marginBottom: '8px',
-                        border: `1px solid ${veiculo.status === 'manutencao' ? '#fecaca' : '#e5e7eb'}`
-                      }}>
-                        <div>
-                          <div style={{ fontWeight: '600', color: '#1f2937' }}>
-                            {veiculo.prefixo} - {veiculo.placa}
+                    {veiculos.map(veiculo => {
+                      const kmParaRevisao = veiculo.kmProximaRevisao - veiculo.ultimoKm;
+                      const precisaRevisao = kmParaRevisao <= 1000;
+                      const estaEditando = veiculoEditando === veiculo.id;
+                      
+                      return (
+                        <div key={veiculo.id} style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column',
+                          padding: '16px', 
+                          backgroundColor: precisaRevisao ? '#fef2f2' : veiculo.status === 'manutencao' ? '#fef2f2' : '#f8fafc', 
+                          borderRadius: '12px',
+                          marginBottom: '8px',
+                          border: `2px solid ${precisaRevisao ? '#fca5a5' : veiculo.status === 'manutencao' ? '#fecaca' : '#e5e7eb'}`
+                        }}>
+                          {/* Cabeçalho do veículo */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: '600', color: '#1f2937', marginBottom: '4px' }}>
+                                {veiculo.prefixo} - {veiculo.placa}
+                              </div>
+                              <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                                {veiculo.modelo}
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <div style={{ 
+                                  fontSize: '12px', 
+                                  color: veiculo.status === 'manutencao' ? '#dc2626' : '#059669',
+                                  fontWeight: '500',
+                                  padding: '2px 8px',
+                                  backgroundColor: veiculo.status === 'manutencao' ? '#fee2e2' : '#dcfce7',
+                                  borderRadius: '12px'
+                                }}>
+                                  {veiculo.status === 'manutencao' ? '🔧 Em Manutenção' : '✅ Ativo'}
+                                </div>
+                                {precisaRevisao && (
+                                  <div style={{ 
+                                    fontSize: '12px', 
+                                    color: '#dc2626',
+                                    fontWeight: '500',
+                                    padding: '2px 8px',
+                                    backgroundColor: '#fee2e2',
+                                    borderRadius: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}>
+                                    <AlertTriangle size={12} />
+                                    Revisão {kmParaRevisao >= 0 ? `em ${kmParaRevisao} km` : 'Vencida'}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              {!estaEditando ? (
+                                <>
+                                  <button
+                                    onClick={() => iniciarEdicaoVeiculo(veiculo)}
+                                    style={{
+                                      ...buttonSecondaryStyle,
+                                      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                                      color: 'white',
+                                      width: 'auto',
+                                      padding: '6px 10px',
+                                      fontSize: '12px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <Edit2 size={14} />
+                                    Editar KM
+                                  </button>
+                                  <button
+                                    onClick={() => removerVeiculo(veiculo.id)}
+                                    style={buttonDangerStyle}
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => salvarEdicaoVeiculo(veiculo.id)}
+                                    style={{
+                                      ...buttonStyle,
+                                      background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                                      width: 'auto',
+                                      padding: '6px 10px',
+                                      fontSize: '12px'
+                                    }}
+                                  >
+                                    ✅ Salvar
+                                  </button>
+                                  <button
+                                    onClick={cancelarEdicaoVeiculo}
+                                    style={{
+                                      ...buttonDangerStyle,
+                                      fontSize: '12px',
+                                      padding: '6px 10px'
+                                    }}
+                                  >
+                                    ✖️ Cancelar
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                            {veiculo.modelo}
-                          </div>
-                          <div style={{ 
-                            fontSize: '12px', 
-                            color: veiculo.status === 'manutencao' ? '#dc2626' : '#059669',
-                            fontWeight: '500'
-                          }}>
-                            {veiculo.status === 'manutencao' ? '🔧 Em Manutenção' : '✅ Ativo'}
-                          </div>
+
+                          {/* Informações de KM */}
+                          {!estaEditando ? (
+                            <div style={{ fontSize: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '8px' }}>
+                              <div>
+                                <span style={{ color: '#6b7280' }}>KM Atual: </span>
+                                <span style={{ fontWeight: '500' }}>{veiculo.ultimoKm?.toLocaleString() || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span style={{ color: '#6b7280' }}>Próxima Revisão: </span>
+                                <span style={{ fontWeight: '500' }}>{veiculo.kmProximaRevisao?.toLocaleString() || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span style={{ color: '#6b7280' }}>Intervalo: </span>
+                                <span style={{ fontWeight: '500' }}>{veiculo.intervaloRevisao?.toLocaleString() || 'N/A'} km</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#f0f9ff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                              <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#1e40af' }}>
+                                ⚙️ Editar Parâmetros de KM
+                              </h4>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                <div>
+                                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                                    KM Atual
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={editKmAtual}
+                                    onChange={(e) => {
+                                      setEditKmAtual(e.target.value);
+                                      // Auto-calcular próxima revisão
+                                      const novoKm = parseInt(e.target.value) || 0;
+                                      const intervalo = parseInt(editIntervaloRevisao) || 10000;
+                                      setEditKmProximaRevisao((novoKm + intervalo).toString());
+                                    }}
+                                    style={{
+                                      width: '100%',
+                                      padding: '6px 8px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '6px',
+                                      fontSize: '14px',
+                                      boxSizing: 'border-box'
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                                    Intervalo Revisão (km)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={editIntervaloRevisao}
+                                    onChange={(e) => {
+                                      setEditIntervaloRevisao(e.target.value);
+                                      // Auto-calcular próxima revisão
+                                      const kmAtual = parseInt(editKmAtual) || 0;
+                                      const novoIntervalo = parseInt(e.target.value) || 10000;
+                                      setEditKmProximaRevisao((kmAtual + novoIntervalo).toString());
+                                    }}
+                                    style={{
+                                      width: '100%',
+                                      padding: '6px 8px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '6px',
+                                      fontSize: '14px',
+                                      boxSizing: 'border-box'
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                                    Próxima Revisão (km)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={editKmProximaRevisao}
+                                    onChange={(e) => setEditKmProximaRevisao(e.target.value)}
+                                    style={{
+                                      width: '100%',
+                                      padding: '6px 8px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '6px',
+                                      fontSize: '14px',
+                                      boxSizing: 'border-box'
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div style={{ marginTop: '8px', fontSize: '11px', color: '#6b7280' }}>
+                                💡 <strong>Dica:</strong> Os campos são calculados automaticamente conforme você digita. Você pode ajustar manualmente a próxima revisão se necessário.
+                                <br />
+                                <strong>Exemplo:</strong> KM Atual: 50.000 + Intervalo: 10.000 = Próxima Revisão: 60.000 km
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <button
-                          onClick={() => removerVeiculo(veiculo.id)}
-                          style={buttonDangerStyle}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -3068,6 +3621,201 @@ const App = () => {
                         </button>
                       </div>
                     ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {modalAtivo === 'relatorio-km' && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              maxWidth: '800px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+            }}>
+              <div style={{
+                padding: '24px 32px',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white'
+              }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Relatório de Quilometragem</h2>
+                <button
+                  onClick={() => setModalAtivo(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white'
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={{ padding: '32px', maxHeight: 'calc(90vh - 100px)', overflowY: 'auto' }}>
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                    📊 Controle de Quilometragem da Frota
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                    <div style={{ padding: '16px', backgroundColor: '#f0f9ff', borderRadius: '12px', border: '1px solid #0ea5e9' }}>
+                      <h4 style={{ margin: '0 0 8px 0', color: '#0369a1', fontSize: '14px' }}>Total KM Frota</h4>
+                      <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#0369a1' }}>
+                        {veiculos.reduce((total, v) => total + (v.ultimoKm || 0), 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div style={{ padding: '16px', backgroundColor: '#f0fdf4', borderRadius: '12px', border: '1px solid #22c55e' }}>
+                      <h4 style={{ margin: '0 0 8px 0', color: '#15803d', fontSize: '14px' }}>Média por Veículo</h4>
+                      <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#15803d' }}>
+                        {veiculos.length > 0 ? Math.round(veiculos.reduce((total, v) => total + (v.ultimoKm || 0), 0) / veiculos.length).toLocaleString() : 0}
+                      </p>
+                    </div>
+                    <div style={{ padding: '16px', backgroundColor: '#fef2f2', borderRadius: '12px', border: '1px solid #ef4444' }}>
+                      <h4 style={{ margin: '0 0 8px 0', color: '#dc2626', fontSize: '14px' }}>Revisões Próximas</h4>
+                      <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#dc2626' }}>
+                        {veiculos.filter(v => (v.kmProximaRevisao - v.ultimoKm) <= 1000).length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                    Detalhamento por Veículo
+                  </h3>
+                  <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {veiculos.map(veiculo => {
+                      const kmParaRevisao = veiculo.kmProximaRevisao - veiculo.ultimoKm;
+                      const precisaRevisao = kmParaRevisao <= 1000;
+                      const percentualRevisao = ((veiculo.ultimoKm - (veiculo.kmProximaRevisao - veiculo.intervaloRevisao)) / veiculo.intervaloRevisao) * 100;
+                      
+                      return (
+                        <div key={veiculo.id} style={{ 
+                          padding: '20px', 
+                          backgroundColor: precisaRevisao ? '#fef2f2' : '#f8fafc', 
+                          borderRadius: '12px',
+                          marginBottom: '12px',
+                          border: `2px solid ${precisaRevisao ? '#fca5a5' : '#e5e7eb'}`
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                            <div>
+                              <h4 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600' }}>
+                                {veiculo.prefixo} - {veiculo.placa}
+                              </h4>
+                              <p style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: '14px' }}>
+                                {veiculo.modelo}
+                              </p>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <span style={{ 
+                                  fontSize: '12px', 
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  backgroundColor: veiculo.status === 'ativo' ? '#dcfce7' : '#fee2e2',
+                                  color: veiculo.status === 'ativo' ? '#166534' : '#991b1b',
+                                  fontWeight: '500'
+                                }}>
+                                  {veiculo.status === 'ativo' ? '✅ Ativo' : '🔧 Manutenção'}
+                                </span>
+                                {precisaRevisao && (
+                                  <span style={{ 
+                                    fontSize: '12px', 
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    backgroundColor: '#fee2e2',
+                                    color: '#991b1b',
+                                    fontWeight: '500',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}>
+                                    <AlertTriangle size={12} />
+                                    Revisão {kmParaRevisao <= 0 ? 'Vencida' : 'Próxima'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937' }}>
+                                {veiculo.ultimoKm?.toLocaleString() || 'N/A'} km
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#6b7280' }}>Quilometragem atual</div>
+                            </div>
+                          </div>
+                          
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#6b7280' }}>Próxima Revisão</div>
+                              <div style={{ fontSize: '16px', fontWeight: '600' }}>
+                                {veiculo.kmProximaRevisao?.toLocaleString() || 'N/A'} km
+                              </div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#6b7280' }}>Faltam</div>
+                              <div style={{ fontSize: '16px', fontWeight: '600', color: kmParaRevisao <= 0 ? '#dc2626' : '#059669' }}>
+                                {kmParaRevisao <= 0 ? 'Vencida' : `${kmParaRevisao.toLocaleString()} km`}
+                              </div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#6b7280' }}>Intervalo</div>
+                              <div style={{ fontSize: '16px', fontWeight: '600' }}>
+                                {veiculo.intervaloRevisao?.toLocaleString() || 'N/A'} km
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Barra de progresso para revisão */}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '12px', color: '#6b7280' }}>Progresso até próxima revisão</span>
+                              <span style={{ fontSize: '12px', fontWeight: '600', color: percentualRevisao >= 100 ? '#dc2626' : '#374151' }}>
+                                {Math.min(100, Math.max(0, percentualRevisao)).toFixed(1)}%
+                              </span>
+                            </div>
+                            <div style={{ 
+                              width: '100%', 
+                              height: '8px', 
+                              backgroundColor: '#e5e7eb', 
+                              borderRadius: '4px',
+                              overflow: 'hidden'
+                            }}>
+                              <div style={{ 
+                                width: `${Math.min(100, Math.max(0, percentualRevisao))}%`, 
+                                height: '100%', 
+                                backgroundColor: percentualRevisao >= 90 ? '#dc2626' : percentualRevisao >= 75 ? '#f59e0b' : '#059669',
+                                transition: 'width 0.3s ease'
+                              }}></div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
